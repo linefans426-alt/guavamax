@@ -369,6 +369,8 @@ a:hover { color: var(--ink); }
 .prose th { background: var(--ink); color: var(--bg); text-align: left; font-weight: 600; }
 .prose th, .prose td { padding: 10px 14px; border-bottom: 2px solid var(--line); vertical-align: top; }
 .prose tr:last-child td { border-bottom: 0; }
+.prose td:first-child, .prose th:first-child { white-space: nowrap; }
+@media (max-width: 640px) { .prose table { min-width: 600px; font-size: 14px; } }
 
 /* 文末 */
 .post-end { margin: 56px 0 32px; padding: 24px; text-align: center; background: var(--ink); color: var(--bg); box-shadow: 8px 8px 0 var(--pink-bright); }
