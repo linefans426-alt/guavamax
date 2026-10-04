@@ -67,6 +67,32 @@ SPRITE_COLORS = {
 }
 
 
+def mirror(halves: list[str]) -> list[str]:
+    return [h + h[::-1] for h in halves]
+
+
+BUG_SPRITE = mirror([
+    "..K.....",
+    "...K....",
+    "....KKKK",
+    "....KWKK",
+    ".....KKK",
+    "...KKRRK",
+    "..KRRRRK",
+    "KKKRSRRK",
+    "..KRRRRK",
+    "KKKRRSRK",
+    "..KRRRRK",
+    "KKKRSRRK",
+    "...KRRRK",
+    "....KKKK",
+    "........",
+    "........",
+])
+BUG_COLORS = {"K": "#241a3a", "R": "#ff004d", "S": "#7e2553", "W": "#fff1e8"}
+COVERS = {"guava": (GUAVA_SPRITE, SPRITE_COLORS), "bug": (BUG_SPRITE, BUG_COLORS)}
+
+
 def sprite_svg(rows: list[str], colors: dict[str, str], title: str = "") -> str:
     rects = []
     for y, row in enumerate(rows):
@@ -177,6 +203,44 @@ def load_posts() -> list[Post]:
     # date 可寫成 2026-10-05 或 2026-10-05 14:30，同一天的文章依時間排序
     posts.sort(key=lambda p: p.extra["sort"], reverse=True)
     return posts
+
+
+@dataclass
+class Game:
+    slug: str
+    title: str
+    title_en: str
+    description: str
+    script: str
+    cover: str
+    controls: list[str]
+    order: int
+    body_html: str
+
+    @property
+    def url(self) -> str:
+        return f"/arcade/{self.slug}/"
+
+
+def load_games() -> list[Game]:
+    games = []
+    for path in sorted((CONTENT / "games").glob("*.md")):
+        meta, body = parse_front_matter(path.read_text(encoding="utf-8"))
+        if str(meta.get("draft", "")).lower() == "true":
+            continue
+        games.append(Game(
+            slug=meta.get("slug") or path.stem,
+            title=meta["title"],
+            title_en=meta.get("title_en", ""),
+            description=meta.get("description", ""),
+            script=meta["script"],
+            cover=meta.get("cover", "guava"),
+            controls=meta.get("controls", []),
+            order=int(meta.get("order", 99)),
+            body_html=enhance_html(make_md().convert(body)),
+        ))
+    games.sort(key=lambda g: g.order)
+    return games
 
 
 def enhance_html(body: str) -> str:
@@ -303,7 +367,7 @@ def post_card(p: Post, index: int) -> str:
 </article>"""
 
 
-def render_home(posts: list[Post]) -> str:
+def render_home(posts: list[Post], games: list) -> str:
     sprite = sprite_svg(GUAVA_SPRITE, SPRITE_COLORS, "像素芭樂")
     cards = "".join(post_card(p, i + 1) for i, p in enumerate(posts[:6]))
     body = f"""
@@ -327,7 +391,7 @@ def render_home(posts: list[Post]) -> str:
   <div class="container">
     <dl class="stat-bar">
       <div><dt>POSTS</dt><dd>{len(posts):02d}</dd></div>
-      <div><dt>GAMES</dt><dd>00</dd></div>
+      <div><dt>GAMES</dt><dd>{len(games):02d}</dd></div>
       <div><dt>COFFEE</dt><dd>99+</dd></div>
     </dl>
   </div>
@@ -431,28 +495,86 @@ def render_post(p: Post, prev_post: Post | None, next_post: Post | None) -> str:
                   og_type="article", head_extra=head_extra, body_class="page-post")
 
 
-def render_arcade() -> str:
-    slots = "".join(
-        f"""<div class="cabinet is-locked">
+def cover_svg(name: str) -> str:
+    rows, colors = COVERS.get(name, COVERS["guava"])
+    return sprite_svg(rows, colors)
+
+
+def render_arcade(games: list[Game]) -> str:
+    cabinets = "".join(
+        f"""<a class="cabinet" href="{g.url}">
+  <div class="cabinet-screen"><div class="cabinet-sprite">{cover_svg(g.cover)}</div></div>
+  <p class="cabinet-name">{esc(g.title)}</p>
+  <p class="cabinet-en">{esc(g.title_en)}</p>
+  <p class="cabinet-desc">{esc(g.description)}</p>
+  <p class="cabinet-status is-ready">PLAY ▶</p>
+</a>"""
+        for g in games
+    )
+    cabinets += """<div class="cabinet is-locked">
   <div class="cabinet-screen"><span class="cabinet-q">?</span></div>
-  <p class="cabinet-name">GAME {i:02d}</p>
+  <p class="cabinet-name">NEXT GAME</p>
   <p class="cabinet-status">COMING SOON</p>
 </div>"""
-        for i in range(1, 4)
-    )
     body = f"""
 <section class="page-head">
   <div class="container">
     <p class="page-kicker">ARCADE</p>
     <h1 class="page-title">像素遊戲廳</h1>
-    <p class="page-lead">打開瀏覽器就能玩的小遊戲。每一台機台都會附上一篇開發筆記，記錄它是怎麼做出來的。</p>
+    <p class="page-lead">打開瀏覽器就能玩的小遊戲，手機、電腦都可以玩。每一台機台都附上玩法說明和開發筆記。</p>
   </div>
 </section>
 <section class="section">
-  <div class="container"><div class="cabinet-grid">{slots}</div></div>
+  <div class="container"><div class="cabinet-grid">{cabinets}</div></div>
 </section>
 """
     return layout(title="像素遊戲廳", description="瀏覽器即可遊玩的像素小遊戲與開發筆記。", path="/arcade/", body=body)
+
+
+def render_game(g: Game, others: list[Game]) -> str:
+    controls = "".join(f"<li>{esc(c)}</li>" for c in g.controls)
+    more = "".join(
+        f'<a class="post-nav-link" href="{o.url}"><span>也玩玩看 ▶</span>{esc(o.title)}</a>' for o in others
+    )
+    ld = {
+        "@context": "https://schema.org",
+        "@type": "VideoGame",
+        "name": g.title,
+        "description": g.description,
+        "url": SITE["url"] + g.url,
+        "genre": "Arcade",
+        "gamePlatform": "Web browser",
+        "inLanguage": SITE["lang"],
+    }
+    head_extra = f'<script type="application/ld+json">{json.dumps(ld, ensure_ascii=False)}</script>'
+    body = f"""
+<section class="page-head game-head">
+  <div class="container narrow">
+    <p class="page-kicker"><a href="/arcade/">ARCADE</a> ▶ {esc(g.title_en)}</p>
+    <h1 class="page-title">{esc(g.title)}</h1>
+    <p class="page-lead">{esc(g.description)}</p>
+  </div>
+</section>
+<section class="section section-tight">
+  <div class="container narrow">
+    <div class="game-frame">
+      <canvas id="game" class="game-canvas" aria-label="{esc(g.title)} 遊戲畫面"></canvas>
+    </div>
+    <div class="game-bar">
+      <ul class="game-controls">{controls}</ul>
+      <button class="px-btn game-mute" type="button" data-px-mute>SOUND ON</button>
+    </div>
+    <div class="prose game-notes">
+{g.body_html}
+    </div>
+    <nav class="post-nav" aria-label="其他遊戲">{more}</nav>
+  </div>
+</section>
+<script src="/games/px.js?v={BUILD_ID}"></script>
+<script src="/games/{g.script}?v={BUILD_ID}"></script>
+"""
+    return layout(title=g.title, description=g.description, path=g.url, body=body,
+                  head_extra=head_extra, body_class="page-game")
 
 
 def render_simple_page(path: str, kicker: str, title: str, description: str, md_text: str) -> str:
@@ -536,13 +658,16 @@ def build() -> None:
     (DIST / "favicon.svg").write_text(sprite_svg(GUAVA_SPRITE, SPRITE_COLORS), encoding="utf-8")
 
     posts = load_posts()
-    write("/", render_home(posts))
+    games = load_games()
+    write("/", render_home(posts, games))
     write("/posts/", render_post_list(posts))
     for i, p in enumerate(posts):
         prev_post = posts[i + 1] if i + 1 < len(posts) else None
         next_post = posts[i - 1] if i > 0 else None
         write(p.url, render_post(p, prev_post, next_post))
-    write("/arcade/", render_arcade())
+    write("/arcade/", render_arcade(games))
+    for g in games:
+        write(g.url, render_game(g, [o for o in games if o.slug != g.slug]))
 
     pages_dir = CONTENT / "pages"
     simple_pages = []
@@ -554,12 +679,12 @@ def build() -> None:
 
     write("/404.html", render_404())
     write("/feed.xml", render_feed(posts))
-    write("/sitemap.xml", render_sitemap(posts, ["/", "/posts/", "/arcade/", *simple_pages]))
+    write("/sitemap.xml", render_sitemap(posts, ["/", "/posts/", "/arcade/", *[g.url for g in games], *simple_pages]))
     (DIST / "robots.txt").write_text(f"User-agent: *\nAllow: /\n\nSitemap: {SITE['url']}/sitemap.xml\n", encoding="utf-8")
     if SITE.get("adsense_client"):
         pub = SITE["adsense_client"].replace("ca-", "")
         (DIST / "ads.txt").write_text(f"google.com, {pub}, DIRECT, f08c47fec0942fa0\n", encoding="utf-8")
-    print(f"Built {len(posts)} post(s) → {DIST}")
+    print(f"Built {len(posts)} post(s), {len(games)} game(s) → {DIST}")
 
 
 if __name__ == "__main__":

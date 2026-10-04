@@ -452,3 +452,36 @@ a:hover { color: var(--ink); }
 .flow-loop { margin: 10px 0 0; font-size: 14px; color: var(--pink); font-weight: 600; }
 .flow-note { margin: 10px 0 0; font-size: 14px; color: var(--ink-soft); }
 .prose blockquote p + p { margin-top: 0.4em; }
+
+/* ── 遊戲廳：機台卡片 ── */
+a.cabinet { display: block; color: var(--ink); text-decoration: none; transition: transform 80ms steps(1); }
+a.cabinet:hover { transform: translate(-4px, -4px); box-shadow: 12px 12px 0 var(--shadow); }
+a.cabinet:hover .cabinet-name { color: var(--pink); }
+.cabinet-sprite { width: 45%; }
+.cabinet-sprite svg { width: 100%; height: auto; image-rendering: pixelated; animation: bob 1.6s steps(2) infinite; }
+.cabinet-en { font-family: var(--font-pixel); -webkit-font-smoothing: none; font-size: 12px; color: var(--ink-soft); margin: 0 0 8px; }
+.cabinet-desc { font-size: 14px; color: var(--ink-soft); line-height: 1.6; margin: 0 0 12px; }
+.cabinet-status.is-ready { display: inline-block; padding: 4px 10px; background: var(--pink-bright); color: #1d2b53; font-size: 24px; animation: blink 1.4s steps(1) infinite; }
+.cabinet.is-locked { opacity: 0.75; }
+
+/* ── 遊戲頁 ── */
+.game-head { padding-bottom: 16px; }
+.game-head .page-kicker a { color: inherit; text-decoration: none; }
+.game-head .page-kicker a:hover { color: var(--pink); }
+.game-frame {
+  padding: 16px; background: #1d2b53; border: var(--px) solid #000;
+  box-shadow: inset 0 0 0 4px #29366f, 8px 8px 0 var(--pink-bright);
+}
+.game-canvas {
+  display: block; width: 100%; height: auto; aspect-ratio: 6 / 5;
+  image-rendering: pixelated; image-rendering: crisp-edges;
+  background: #10131f; touch-action: none; user-select: none; -webkit-user-select: none;
+  cursor: pointer; outline: none;
+}
+.game-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin: 24px 0 8px; }
+.game-controls { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.game-controls li { font-size: 14px; padding: 4px 10px; background: var(--surface); border: 2px solid var(--line); }
+.game-mute { font-size: 12px; padding: 6px 12px; }
+.game-notes { margin-top: 24px; }
+.page-game .post-nav { margin-top: 40px; }
+.page-game .post-nav-link { grid-column: 1; }
