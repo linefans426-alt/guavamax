@@ -355,7 +355,7 @@ def layout(*, title: str, description: str, path: str, body: str, og_type: str =
   <div class="container footer-inner">
     <p class="footer-title">© {date.today().year} {SITE['title']}</p>
     <p class="footer-links">
-      <a href="/about/">關於</a><a href="/privacy/">隱私權政策</a><a href="/feed.xml">RSS</a>
+      <a href="/about/">關於</a><a href="/privacy/">隱私權政策</a><a href="mailto:linefans426@gmail.com">聯絡</a><a href="/feed.xml">RSS</a>
     </p>
     <p class="footer-note">像素字型：俐方體11號（Cubic 11, SIL OFL 1.1）</p>
   </div>

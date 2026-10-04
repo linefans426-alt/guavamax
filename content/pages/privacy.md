@@ -32,6 +32,10 @@ description: GUAVAMAX 網站的隱私權政策，說明 Cookie 與第三方廣�
 
 本站文章可能包含其他網站的連結，這些網站的隱私權做法不在本政策範圍內，建議你另行參閱其政策。
 
+## 聯絡方式
+
+對本政策有任何疑問，請來信 <a href="mailto:linefans426@gmail.com">linefans426@gmail.com</a>。
+
 ## 政策更新
 
 本政策可能因網站功能或法規變動而修訂，修訂後會在本頁更新日期。
