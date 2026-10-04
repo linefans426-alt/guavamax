@@ -1,7 +1,7 @@
 ---
 title: Chat AI 和 AI Agent 差在哪？從「會說的大腦」到「能做事的助手」
 description: Chat AI 是會思考、會回答的大腦，AI Agent 則是接上手腳、能自己把事情做完的助手。用 ChatGPT、Gemini、Claude 實例說明兩者差異，以及怎麼把聊天 AI 升級成 Agent。
-date: 2026-10-05
+date: 2026-10-05 01:40
 tags: [AI 應用, AI Agent, ChatGPT, Gemini, Claude]
 slug: chat-ai-vs-ai-agent
 ---

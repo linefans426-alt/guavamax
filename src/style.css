@@ -339,7 +339,7 @@ a:hover { color: var(--ink); }
 
 /* Pygments token 配色（PICO-8 色票） */
 .highlight .c, .highlight .c1, .highlight .cm, .highlight .ch, .highlight .cs { color: #8b93c4; font-style: italic; }
-.highlight .k, .highlight .kd, .highlight .kn, .highlight .kc { color: #ff77a8; }
+.highlight .k, .highlight .kd, .highlight .kn, .highlight .kc, .highlight .ow { color: #ff77a8; }
 .highlight .s, .highlight .s1, .highlight .s2, .highlight .sh, .highlight .se, .highlight .si, .highlight .sb { color: #ffec27; }
 .highlight .nb, .highlight .bp, .highlight .nf, .highlight .fm { color: #29adff; }
 .highlight .nv, .highlight .vg, .highlight .na { color: #00e436; }

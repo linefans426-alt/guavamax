@@ -1,7 +1,7 @@
 ---
 title: ChatGPT、Gemini、Claude 怎麼選？一張表看懂三大 AI 的強項與適用任務
 description: 三大 AI 助理各有擅長。用表格整理 ChatGPT、Gemini、Claude 的優缺點、價格與適合的任務，幫你決定該訂哪一個，或怎麼搭配使用。
-date: 2026-10-05
+date: 2026-10-05 01:30
 tags: [AI 應用, ChatGPT, Gemini, Claude, 工具比較]
 slug: chatgpt-gemini-claude-how-to-choose
 ---

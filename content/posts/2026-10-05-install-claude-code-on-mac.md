@@ -1,7 +1,7 @@
 ---
 title: Mac 一步步安裝 Claude Code：把 AI 夥伴接進你的終端機
 description: 從打開終端機、安裝、登入到第一次請 AI 改程式碼，一篇帶你在 Mac 上完成 Claude Code 設定，附常見錯誤排解。
-date: 2026-10-05
+date: 2026-10-05 00:20
 tags: [AI 應用, Claude Code, Mac, 新手教學]
 slug: install-claude-code-on-mac
 ---

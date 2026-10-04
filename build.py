@@ -163,7 +163,8 @@ def load_posts() -> list[Post]:
                 slug=meta.get("slug") or path.stem,
                 title=meta["title"],
                 description=meta.get("description", ""),
-                date=date.fromisoformat(meta["date"]),
+                date=datetime.fromisoformat(meta["date"]).date(),
+                extra={"sort": datetime.fromisoformat(meta["date"])},
                 updated=date.fromisoformat(meta["updated"]) if meta.get("updated") else None,
                 tags=meta.get("tags", []),
                 draft=str(meta.get("draft", "")).lower() == "true",
@@ -173,7 +174,8 @@ def load_posts() -> list[Post]:
             )
         )
     posts = [p for p in posts if not p.draft]
-    posts.sort(key=lambda p: p.date, reverse=True)
+    # date 可寫成 2026-10-05 或 2026-10-05 14:30，同一天的文章依時間排序
+    posts.sort(key=lambda p: p.extra["sort"], reverse=True)
     return posts
 
 

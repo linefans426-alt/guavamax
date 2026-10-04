@@ -26,7 +26,7 @@ python build.py --serve   # http://localhost:8000
 ---
 title: 文章標題
 description: 一兩句摘要（也會用在搜尋結果）
-date: 2026-10-05
+date: 2026-10-05 14:30
 tags: [AI 應用, 標籤二]
 slug: url-slug
 ---
