@@ -90,7 +90,28 @@ BUG_SPRITE = mirror([
     "........",
 ])
 BUG_COLORS = {"K": "#241a3a", "R": "#ff004d", "S": "#7e2553", "W": "#fff1e8"}
-COVERS = {"guava": (GUAVA_SPRITE, SPRITE_COLORS), "bug": (BUG_SPRITE, BUG_COLORS)}
+BRICK_SPRITE = [
+    "................",
+    ".RRRRRR.OOOOOOO.",
+    ".RRRRRR.OOOOOOO.",
+    "................",
+    "YYY.LLLLLLL.BBBB",
+    "YYY.LLLLLLL.BBBB",
+    "................",
+    ".PPPPPP.GGGGGGG.",
+    ".PPPPPP.GGGGGGG.",
+    "................",
+    "................",
+    "........WW......",
+    "........WW......",
+    "................",
+    "....QQQQQQQQ....",
+    "....QQQQQQQQ....",
+]
+BRICK_COLORS = {"R": "#ff004d", "O": "#ffa300", "Y": "#ffec27", "L": "#00e436", "B": "#29adff",
+                "P": "#ff77a8", "G": "#008751", "W": "#fff1e8", "Q": "#ff77a8"}
+COVERS = {"guava": (GUAVA_SPRITE, SPRITE_COLORS), "bug": (BUG_SPRITE, BUG_COLORS),
+          "bricks": (BRICK_SPRITE, BRICK_COLORS)}
 
 
 def sprite_svg(rows: list[str], colors: dict[str, str], title: str = "") -> str:
