@@ -485,3 +485,11 @@ a.cabinet:hover .cabinet-name { color: var(--pink); }
 .game-notes { margin-top: 24px; }
 .page-game .post-nav { margin-top: 40px; }
 .page-game .post-nav-link { grid-column: 1; }
+
+/* ── 草稿預覽 ── */
+.draft-banner {
+  position: sticky; top: 68px; z-index: 15;
+  padding: 10px 16px; text-align: center; font-size: 14px; font-weight: 600;
+  background: #ffec27; color: #1d2b53; border-bottom: var(--px) solid var(--line);
+}
+@media (max-width: 640px) { .draft-banner { top: 60px; font-size: 13px; } }

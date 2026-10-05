@@ -41,7 +41,13 @@ slug: url-slug
     內容（縮排四格）
 ```
 
-可用 `tip`、`note`、`warning`。front matter 加上 `draft: true` 則不會發布。
+可用 `tip`、`note`、`warning`。
+
+### 草稿
+
+front matter 加上 `draft: true` 就是草稿：不會出現在文章列表、首頁、sitemap 與 RSS，
+只能從 `/drafts/` 預覽，且頁面帶有 noindex，不會被搜尋引擎收錄。
+要發布時把 `draft: true` 刪掉，並把 `date` 改成實際發布時間。
 
 ## 部署
 

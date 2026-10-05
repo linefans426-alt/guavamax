@@ -198,7 +198,8 @@ def make_md() -> markdown.Markdown:
     )
 
 
-def load_posts() -> list[Post]:
+def load_posts(drafts: bool = False) -> list[Post]:
+    """drafts=False 回傳已發布文章；drafts=True 只回傳草稿。"""
     posts = []
     for path in sorted((CONTENT / "posts").glob("*.md")):
         meta, body = parse_front_matter(path.read_text(encoding="utf-8"))
@@ -220,7 +221,7 @@ def load_posts() -> list[Post]:
                 minutes=reading_minutes(body),
             )
         )
-    posts = [p for p in posts if not p.draft]
+    posts = [p for p in posts if p.draft == drafts]
     # date 可寫成 2026-10-05 或 2026-10-05 14:30，同一天的文章依時間排序
     posts.sort(key=lambda p: p.extra["sort"], reverse=True)
     return posts
@@ -293,11 +294,13 @@ def fmt_date(d: date) -> str:
 
 
 def layout(*, title: str, description: str, path: str, body: str, og_type: str = "website",
-           head_extra: str = "", body_class: str = "") -> str:
+           head_extra: str = "", body_class: str = "", noindex: bool = False) -> str:
     full_title = f"{title}｜{SITE['title']}" if title != SITE["title"] else f"{SITE['title']}｜{SITE['subtitle']}"
     canonical = SITE["url"] + path
     adsense = ""
-    if SITE.get("adsense_client"):
+    if noindex:
+        head_extra = '<meta name="robots" content="noindex, nofollow">' + head_extra
+    if SITE.get("adsense_client") and not noindex:
         adsense = (
             '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js'
             f'?client={esc(SITE["adsense_client"])}" crossorigin="anonymous"></script>'
@@ -461,7 +464,7 @@ def render_post_list(posts: list[Post]) -> str:
     return layout(title="所有文章", description="技術案例、AI 應用與開發筆記列表。", path="/posts/", body=body)
 
 
-def render_post(p: Post, prev_post: Post | None, next_post: Post | None) -> str:
+def render_post(p: Post, prev_post: Post | None, next_post: Post | None, draft: bool = False) -> str:
     updated = (
         f'<span>更新 <time datetime="{p.updated.isoformat()}">{fmt_date(p.updated)}</time></span>'
         if p.updated else ""
@@ -488,6 +491,7 @@ def render_post(p: Post, prev_post: Post | None, next_post: Post | None) -> str:
     head_extra = f'<script type="application/ld+json">{json.dumps(ld, ensure_ascii=False)}</script>'
     body = f"""
 <div class="xp-bar" aria-hidden="true"><div class="xp-fill"></div><span class="xp-label">EXP</span></div>
+{'<div class="draft-banner">DRAFT・草稿預覽：這篇文章尚未發布，不會出現在文章列表，也不會被搜尋引擎收錄。</div>' if draft else ''}
 <article class="post">
   <header class="post-head container narrow">
     <ul class="tags">{tag_list(p.tags)}</ul>
@@ -512,8 +516,28 @@ def render_post(p: Post, prev_post: Post | None, next_post: Post | None) -> str:
   </div>
 </article>
 """
-    return layout(title=p.title, description=p.description, path=p.url, body=body,
-                  og_type="article", head_extra=head_extra, body_class="page-post")
+    path = f"/drafts/{p.slug}/" if draft else p.url
+    return layout(title=p.title, description=p.description, path=path, body=body,
+                  og_type="article", head_extra=head_extra, body_class="page-post", noindex=draft)
+
+
+def render_drafts(drafts: list[Post]) -> str:
+    items = "".join(
+        f'<li><a href="/drafts/{d.slug}/">{esc(d.title)}</a>（預計 {fmt_date(d.date)}）</li>' for d in drafts
+    ) or "<li>目前沒有草稿。</li>"
+    body = f"""
+<section class="page-head">
+  <div class="container narrow">
+    <p class="page-kicker">DRAFTS</p>
+    <h1 class="page-title">草稿預覽</h1>
+    <p class="page-lead">尚未發布的文章，只有知道網址的人看得到，搜尋引擎不會收錄。</p>
+  </div>
+</section>
+<section class="section section-tight">
+  <div class="container narrow"><div class="prose"><ul>{items}</ul></div></div>
+</section>
+"""
+    return layout(title="草稿預覽", description="尚未發布的文章。", path="/drafts/", body=body, noindex=True)
 
 
 def cover_svg(name: str) -> str:
@@ -686,6 +710,14 @@ def build() -> None:
         prev_post = posts[i + 1] if i + 1 < len(posts) else None
         next_post = posts[i - 1] if i > 0 else None
         write(p.url, render_post(p, prev_post, next_post))
+    drafts = load_posts(drafts=True)
+    write("/drafts/", render_drafts(drafts))
+    for d in drafts:
+        html_out = render_post(d, None, None, draft=True)
+        # 草稿之間互相連結時，預覽版改連到草稿網址
+        for other in drafts:
+            html_out = html_out.replace(f'href="{other.url}"', f'href="/drafts/{other.slug}/"')
+        write(f"/drafts/{d.slug}/", html_out)
     write("/arcade/", render_arcade(games))
     for g in games:
         write(g.url, render_game(g, [o for o in games if o.slug != g.slug]))
@@ -705,7 +737,7 @@ def build() -> None:
     if SITE.get("adsense_client"):
         pub = SITE["adsense_client"].replace("ca-", "")
         (DIST / "ads.txt").write_text(f"google.com, {pub}, DIRECT, f08c47fec0942fa0\n", encoding="utf-8")
-    print(f"Built {len(posts)} post(s), {len(games)} game(s) → {DIST}")
+    print(f"Built {len(posts)} post(s), {len(drafts)} draft(s), {len(games)} game(s) → {DIST}")
 
 
 if __name__ == "__main__":
