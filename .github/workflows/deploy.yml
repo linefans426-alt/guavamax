@@ -3,6 +3,9 @@ name: Deploy site
 on:
   push:
     branches: [main]
+  # 每小時重新建置一次，讓排程文章時間到就自動上線
+  schedule:
+    - cron: "1 * * * *"
   workflow_dispatch:
 
 permissions:

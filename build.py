@@ -21,6 +21,7 @@ import sys
 from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import markdown
 from markdown.extensions.toc import slugify_unicode
@@ -33,6 +34,8 @@ DIST = ROOT / "dist"
 
 SITE = json.loads((ROOT / "site.json").read_text(encoding="utf-8"))
 BUILD_ID = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+# 文章的 date 一律視為台灣時間；date 在未來的文章視為「排程中」，時間到才發布
+NOW_LOCAL = datetime.now(ZoneInfo("Asia/Taipei")).replace(tzinfo=None)
 
 esc = html.escape
 
@@ -221,7 +224,12 @@ def load_posts(drafts: bool = False) -> list[Post]:
                 minutes=reading_minutes(body),
             )
         )
-    posts = [p for p in posts if p.draft == drafts]
+    for p in posts:
+        p.extra["scheduled"] = not p.draft and p.extra["sort"] > NOW_LOCAL
+    if drafts:
+        posts = [p for p in posts if p.draft or p.extra["scheduled"]]
+    else:
+        posts = [p for p in posts if not p.draft and not p.extra["scheduled"]]
     # date 可寫成 2026-10-05 或 2026-10-05 14:30，同一天的文章依時間排序
     posts.sort(key=lambda p: p.extra["sort"], reverse=True)
     return posts
@@ -491,7 +499,7 @@ def render_post(p: Post, prev_post: Post | None, next_post: Post | None, draft: 
     head_extra = f'<script type="application/ld+json">{json.dumps(ld, ensure_ascii=False)}</script>'
     body = f"""
 <div class="xp-bar" aria-hidden="true"><div class="xp-fill"></div><span class="xp-label">EXP</span></div>
-{'<div class="draft-banner">DRAFT・草稿預覽：這篇文章尚未發布，不會出現在文章列表，也不會被搜尋引擎收錄。</div>' if draft else ''}
+{draft_banner(p) if draft else ''}
 <article class="post">
   <header class="post-head container narrow">
     <ul class="tags">{tag_list(p.tags)}</ul>
@@ -521,9 +529,19 @@ def render_post(p: Post, prev_post: Post | None, next_post: Post | None, draft: 
                   og_type="article", head_extra=head_extra, body_class="page-post", noindex=draft)
 
 
+def draft_banner(p: Post) -> str:
+    if p.extra.get("scheduled"):
+        when = p.extra["sort"].strftime("%Y.%m.%d %H:%M")
+        return f'<div class="draft-banner">SCHEDULED・排程中：這篇文章將在 {when}（台灣時間）自動發布。</div>'
+    return '<div class="draft-banner">DRAFT・草稿預覽：這篇文章尚未發布，不會出現在文章列表，也不會被搜尋引擎收錄。</div>'
+
+
 def render_drafts(drafts: list[Post]) -> str:
     items = "".join(
-        f'<li><a href="/drafts/{d.slug}/">{esc(d.title)}</a>（預計 {fmt_date(d.date)}）</li>' for d in drafts
+        f'<li><a href="/drafts/{d.slug}/">{esc(d.title)}</a>'
+        + (f'（排程中：{d.extra["sort"].strftime("%Y.%m.%d %H:%M")} 自動發布）</li>' if d.extra.get("scheduled")
+           else f'（草稿，預計 {fmt_date(d.date)}）</li>')
+        for d in drafts
     ) or "<li>目前沒有草稿。</li>"
     body = f"""
 <section class="page-head">

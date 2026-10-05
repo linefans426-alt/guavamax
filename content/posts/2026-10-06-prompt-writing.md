@@ -1,10 +1,9 @@
 ---
 title: Prompt 寫法實戰：同一個需求，好的和壞的 Prompt 差在哪？
 description: Prompt 不是咒語，而是一份清楚的工作交代。這篇用三組實際例子對照好壞 Prompt 的差別，整理好 Prompt 的四大要素、怎麼讓 AI 寫出你的風格，以及輸出格式要嚴格遵守時的做法。
-date: 2026-10-12 20:30
+date: 2026-10-06 10:00
 tags: [AI 應用, Prompt, LLM]
 slug: prompt-writing
-draft: true
 ---
 
 很多人覺得 AI 不好用，問題往往不在 AI，而在**我們怎麼交代事情**。

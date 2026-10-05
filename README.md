@@ -49,6 +49,11 @@ front matter 加上 `draft: true` 就是草稿：不會出現在文章列表、�
 只能從 `/drafts/` 預覽，且頁面帶有 noindex，不會被搜尋引擎收錄。
 要發布時把 `draft: true` 刪掉，並把 `date` 改成實際發布時間。
 
+### 排程發布
+
+`date` 一律視為台灣時間。拿掉 `draft: true` 後，如果 `date` 還在未來，文章會先顯示在
+`/drafts/`（標示「排程中」），時間到之後由每小時執行一次的 GitHub Actions 自動建置上線。
+
 ## 部署
 
 push 到 `main` 後，GitHub Actions 會自動建置並發布到 GitHub Pages。
