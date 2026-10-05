@@ -1,10 +1,9 @@
 ---
 title: Vibe Coding 是什麼？什麼情況適合，什麼情況千萬不要
 description: Vibe Coding 讓不會寫程式的人也能做出應用，工程師的開發速度也大幅提升。這篇說明它的由來、適合與不適合的情境、常見風險，以及怎麼安全地使用。
-date: 2026-10-15 20:30
+date: 2026-10-07 10:00
 tags: [AI 應用, Vibe Coding, Claude Code, 開發心得]
 slug: vibe-coding
-draft: true
 ---
 
 最近很常聽到 **Vibe Coding** 這個詞：不會寫程式的人，用 AI 做出了自己的 App；工程師用 AI，一個下午做完以前要一週的功能。

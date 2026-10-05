@@ -1,10 +1,9 @@
 ---
 title: Gemini CLI 已轉為 Antigravity CLI：和 Claude Code 怎麼選？
 description: Google 的終端機 AI 工具 Gemini CLI 在 2026 年 6 月轉型為 Antigravity CLI。這篇整理這次轉換對使用者的影響，並比較它和 Claude Code 的功能差異與適合情境。
-date: 2026-10-18 20:30
+date: 2026-10-06 00:40
 tags: [AI 應用, Claude Code, Gemini, 工具比較]
 slug: gemini-cli-vs-claude-code
-draft: true
 ---
 
 在終端機裡直接用 AI 寫程式，這兩年最多人討論的兩套工具，就是 Google 的 **Gemini CLI** 和 Anthropic 的 **Claude Code**。
@@ -28,15 +27,15 @@ Google 也說明，Antigravity CLI 初期**不會和 Gemini CLI 的功能完全�
 所以下面的比較，會把「Gemini CLI（付費 API 版）」和「Antigravity CLI（一般使用者版）」視為同一個 Google 陣營來看。
 
 !!! note "關於這篇比較"
-    本文由 Claude 協助整理，比較自家產品難免有立場問題，所以這篇只比較**可查證的功能與規格**，不比較「誰比較聰明」這種主觀評分。實際使用心得，我會在文章最後補充。
+    本文由 Claude 協助整理，比較自家產品難免有立場問題，所以這篇只比較**可查證的功能與規格**，不比較「誰比較聰明」這種主觀評分。
 
 ## 功能比較表
 
 | | Google（Gemini CLI／Antigravity CLI） | Claude Code |
 | --- | --- | --- |
 | **開發商** | Google | Anthropic |
-| **個人使用方式** | 個人 Google 帳號使用 Antigravity CLI；付費 API 金鑰可續用 Gemini CLI | Claude Pro、Max、Team、Enterprise 訂閱，或 Console API 帳號 |
-| **開源** | Gemini CLI 以 Apache 2.0 授權開源；Antigravity CLI 官方未說明，多家報導指出不開源 | 不開源 |
+| **個人使用方式** | 用 Google 帳號登入 Antigravity CLI，有免費入門額度，Google AI Pro／Ultra 訂閱可提高額度；付費 API 金鑰可續用 Gemini CLI | Claude Pro、Max、Team、Enterprise 訂閱，或 Console API 帳號 |
+| **開源** | Gemini CLI 以 Apache 2.0 授權開源；Antigravity CLI 不開源 | 不開源 |
 | **專案說明檔** | `GEMINI.md` | `CLAUDE.md`，也可直接讀取 `AGENTS.md` |
 | **上下文長度** | Gemini 模型主打 100 萬 Token | 依模型與方案而定 |
 | **內建搜尋** | 內建 Google 搜尋 | 內建網路搜尋與網頁讀取工具 |
@@ -86,14 +85,11 @@ Gemini CLI 這次的轉換，其實給所有人上了一課：**AI 工具變化�
 
 工具會換，但「怎麼把需求交代清楚、怎麼讓 AI 熟悉你的專案」這些能力，換到哪套工具都用得上。
 
-## 站長實際使用心得
-
-!!! warning "草稿備註"
-    這一段請站長補充：實際用過 Gemini CLI 和 Claude Code 的感受，例如在哪些任務上覺得誰比較好用、遇過什麼問題。有真實經驗，這篇的價值會高很多。
-
 **參考資料**
 
 - [Google Developers Blog：Transitioning Gemini CLI to Antigravity CLI](https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli/)
 - [Gemini CLI（GitHub）](https://github.com/google-gemini/gemini-cli)
+- [Google：AI Pro 與 Ultra 訂閱者的 Antigravity 額度提升](https://blog.google/feed/new-antigravity-rate-limits-pro-ultra-subsribers/)
+- [The New Stack：Google pushes users from Gemini CLI to Antigravity CLI](https://thenewstack.io/google-antigravity-cli/)
 - [Claude Code 官方文件](https://code.claude.com/docs/en/setup)
 - [Claude Code 官方文件：How Claude remembers your project](https://code.claude.com/docs/en/memory)
