@@ -1,6 +1,7 @@
 ---
 title: 關於這個存檔點
 kicker: ABOUT
+contact_form: true
 description: 關於 GUAVAMAX：十多年實戰經驗的軟體開發者，負責新創技術決策，專注 AI 導入應用與 LINE 應用開發，分享技術案例、AI 筆記與像素小遊戲。
 ---
 
@@ -54,8 +55,6 @@ description: 關於 GUAVAMAX：十多年實戰經驗的軟體開發者，負責�
 
 ## 聯絡我
 
-如果文章有錯誤或過時的地方、想討論 AI 導入或 LINE 應用開發，或者只是想聊聊動漫和遊戲，都歡迎來信：
+如果文章有錯誤或過時的地方、想討論 AI 導入或 LINE 應用開發，或者只是想聊聊動漫和遊戲，都歡迎直接在下面留言給我，或寄信到 <a href="mailto:linefans426@gmail.com">linefans426@gmail.com</a>。
 
-**Email：<a href="mailto:linefans426@gmail.com">linefans426@gmail.com</a>**
-
-我會盡量回覆每一封信。
+我會盡量回覆每一則訊息。

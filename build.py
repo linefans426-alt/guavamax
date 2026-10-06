@@ -366,7 +366,7 @@ def layout(*, title: str, description: str, path: str, body: str, og_type: str =
   <div class="container footer-inner">
     <p class="footer-title">© {date.today().year} {SITE['title']}</p>
     <p class="footer-links">
-      <a href="/about/">關於</a><a href="/privacy/">隱私權政策</a><a href="mailto:linefans426@gmail.com">聯絡</a><a href="/feed.xml">RSS</a>
+      <a href="/about/">關於</a><a href="/privacy/">隱私權政策</a><a href="/contact/">留言給我</a><a href="/feed.xml">RSS</a>
     </p>
     <p class="footer-note">像素字型：俐方體11號（Cubic 11, SIL OFL 1.1）</p>
   </div>
@@ -518,8 +518,9 @@ def render_post(p: Post, prev_post: Post | None, next_post: Post | None, draft: 
     </div>
     <div class="post-end">
       <p class="post-end-title">STAGE CLEAR!</p>
-      <p>獲得 EXP +{p.minutes * 10}。有問題或想看的主題，歡迎到<a href="/about/">關於頁</a>找我。</p>
+      <p>獲得 EXP +{p.minutes * 10}。有問題或想看的主題，歡迎<a href="/contact/" class="contact-link">私訊留言給我</a>。</p>
     </div>
+    {"" if draft else comments_block()}
     <nav class="post-nav" aria-label="上一篇與下一篇">{"".join(nav_parts)}</nav>
   </div>
 </article>
@@ -640,8 +641,69 @@ def render_game(g: Game, others: list[Game]) -> str:
                   head_extra=head_extra, body_class="page-game")
 
 
-def render_simple_page(path: str, kicker: str, title: str, description: str, md_text: str) -> str:
+def contact_form(intro: str = "") -> str:
+    endpoint = SITE.get("contact_endpoint", "")
+    if not endpoint:
+        return ""
+    intro_html = f'<p class="contact-intro">{intro}</p>' if intro else ""
+    site_key = SITE.get("turnstile_site_key", "")
+    captcha = (
+        f'<div class="cf-turnstile" data-sitekey="{esc(site_key)}" data-language="zh-tw" data-theme="auto"></div>'
+        '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>'
+        if site_key else ""
+    )
+    return f"""
+<section class="contact-box" id="contact">
+  <p class="contact-kicker">SEND MESSAGE・私訊站長</p>
+  {intro_html}
+  <form class="contact-form" data-endpoint="{esc(endpoint)}" novalidate>
+    <div class="contact-row">
+      <label><span class="label-text">暱稱<span class="req">*</span></span>
+        <input name="name" type="text" maxlength="50" required autocomplete="nickname">
+      </label>
+      <label><span class="label-text">Email<span class="opt">（選填，想收到回覆再填）</span></span>
+        <input name="email" type="email" maxlength="254" autocomplete="email">
+      </label>
+    </div>
+    <label><span class="label-text">想說的話<span class="req">*</span></span>
+      <textarea name="message" rows="6" maxlength="2000" required></textarea>
+      <span class="contact-count" aria-live="polite">0 / 2000</span>
+    </label>
+    <label class="contact-hp" aria-hidden="true">網站<input name="website" type="text" tabindex="-1" autocomplete="off"></label>
+    {captcha}
+    <div class="contact-actions">
+      <button class="px-btn px-btn-primary" type="submit">送出 ▶</button>
+      <p class="contact-status" role="status"></p>
+    </div>
+    <p class="contact-note">留言只有站長看得到，會用於回覆你的訊息，詳見<a href="/privacy/">隱私權政策</a>。</p>
+  </form>
+</section>"""
+
+
+def comments_block() -> str:
+    gc = SITE.get("giscus") or {}
+    if not gc.get("category_id"):
+        return ""
+    attrs = " ".join(
+        f'data-{k}="{esc(str(v))}"'
+        for k, v in {
+            "repo": gc["repo"], "repo-id": gc["repo_id"],
+            "category": gc["category"], "category-id": gc["category_id"],
+        }.items()
+    )
+    return f"""
+<section class="comments" aria-label="留言區">
+  <p class="comments-title">COMMENTS・留言區</p>
+  <p class="comments-note">公開留言需要登入 GitHub 帳號。不想公開，也可以<a href="/contact/" class="contact-link">私訊給我</a>。</p>
+  <div class="giscus-mount" {attrs}></div>
+</section>"""
+
+
+def render_simple_page(path: str, kicker: str, title: str, description: str, md_text: str,
+                       with_form: bool = False, form_intro: str = "") -> str:
     content = enhance_html(make_md().convert(md_text))
+    if with_form:
+        content += contact_form(form_intro)
     body = f"""
 <section class="page-head">
   <div class="container narrow">
@@ -745,7 +807,9 @@ def build() -> None:
     for path in sorted(pages_dir.glob("*.md")):
         meta, text = parse_front_matter(path.read_text(encoding="utf-8"))
         url = f"/{path.stem}/"
-        write(url, render_simple_page(url, meta.get("kicker", ""), meta["title"], meta.get("description", ""), text))
+        write(url, render_simple_page(url, meta.get("kicker", ""), meta["title"], meta.get("description", ""), text,
+                                      with_form=str(meta.get("contact_form", "")).lower() == "true",
+                                      form_intro=meta.get("form_intro", "")))
         simple_pages.append(url)
 
     write("/404.html", render_404())

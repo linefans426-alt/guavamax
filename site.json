@@ -5,5 +5,13 @@
   "url": "https://blog.guavamax.com",
   "author": "GUAVAMAX",
   "lang": "zh-Hant-TW",
-  "adsense_client": "ca-pub-9200229847168004"
+  "adsense_client": "ca-pub-9200229847168004",
+  "contact_endpoint": "https://game.guavamax.com/contact/",
+  "giscus": {
+    "repo": "linefans426-alt/guavamax",
+    "repo_id": "R_kgDOU7ekiA",
+    "category": "Announcements",
+    "category_id": ""
+  },
+  "turnstile_site_key": ""
 }

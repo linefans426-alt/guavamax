@@ -493,3 +493,44 @@ a.cabinet:hover .cabinet-name { color: var(--pink); }
   background: #ffec27; color: #1d2b53; border-bottom: var(--px) solid var(--line);
 }
 @media (max-width: 640px) { .draft-banner { top: 60px; font-size: 13px; } }
+
+/* ── 私訊表單 ── */
+.contact-box {
+  margin-top: 40px; padding: 20px; background: var(--surface);
+  border: var(--px) solid var(--line); box-shadow: 8px 8px 0 var(--shadow);
+}
+.contact-kicker { font-family: var(--font-pixel); -webkit-font-smoothing: none; font-size: 24px; margin: 0 0 8px; color: var(--ink); }
+.contact-intro { margin: 0 0 16px; color: var(--ink-soft); }
+.contact-form { display: grid; gap: 16px; margin: 0; }
+.contact-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.contact-form label { display: grid; gap: 6px; font-weight: 600; font-size: 15px; position: relative; }
+.contact-form .req { color: var(--pink); margin-left: 2px; }
+.contact-form .opt { font-weight: normal; color: var(--ink-soft); font-size: 13px; }
+.contact-form input, .contact-form textarea {
+  font: inherit; font-weight: normal; font-size: 16px; color: var(--ink); background: var(--bg);
+  border: 3px solid var(--line); padding: 10px 12px; border-radius: 0; width: 100%;
+  box-shadow: inset 3px 3px 0 rgba(0,0,0,0.08);
+}
+.contact-form textarea { resize: vertical; min-height: 140px; line-height: 1.7; }
+.contact-form input:focus, .contact-form textarea:focus { outline: 3px dashed var(--pink); outline-offset: 2px; }
+.contact-count { justify-self: end; font-weight: normal; font-size: 13px; color: var(--ink-soft); }
+.contact-hp { position: absolute !important; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.contact-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+.contact-actions .px-btn { margin: 4px; }
+.contact-actions .px-btn:disabled { opacity: 0.6; cursor: wait; }
+.contact-status { margin: 0; font-size: 15px; color: var(--ink-soft); }
+.contact-status.is-error { color: #ff004d; font-weight: 600; }
+:root[data-theme="dark"] .contact-status.is-error { color: #ff77a8; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .contact-status.is-error { color: #ff77a8; } }
+.contact-note { margin: 0; font-size: 13px; color: var(--ink-soft); }
+.contact-done { text-align: center; padding: 24px 8px; }
+.contact-done-title { font-family: var(--font-pixel); -webkit-font-smoothing: none; font-size: 36px; color: var(--green); margin: 0 0 8px; }
+.contact-done p { margin: 0; }
+.prose .contact-box { margin-top: 2em; }
+@media (max-width: 640px) { .contact-row { grid-template-columns: 1fr; } .contact-box { padding: 16px; } }
+
+/* ── 公開留言 ── */
+.comments { margin: 0 0 40px; }
+.comments-title { font-family: var(--font-pixel); -webkit-font-smoothing: none; font-size: 24px; margin: 0 0 4px; }
+.comments-note { font-size: 14px; color: var(--ink-soft); margin: 0 0 16px; }
+.giscus-mount { min-height: 120px; }

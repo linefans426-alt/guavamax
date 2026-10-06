@@ -4,13 +4,16 @@ kicker: PRIVACY
 description: GUAVAMAX 網站的隱私權政策，說明 Cookie 與第三方廣告的使用方式。
 ---
 
-最後更新日期：2026 年 10 月 5 日
+最後更新日期：2026 年 10 月 6 日
 
 本網站（blog.guavamax.com，以下稱「本站」）重視你的隱私。本政策說明你瀏覽本站時，可能被收集的資訊與使用方式。
 
 ## 我們收集的資訊
 
-本站為靜態網站，沒有會員系統，也不會主動要求你提供姓名、電子郵件等個人資料。
+本站為靜態網站，沒有會員系統。只有在你主動使用下列功能時，才會收到你提供的資料：
+
+- **私訊表單**：你填寫的暱稱、Email（選填）、留言內容，以及留言的頁面網址。為了防止垃圾留言，系統會記錄你 IP 位址的雜湊值（無法還原成原本的 IP）與瀏覽器資訊。這些資料儲存在站長自行管理的伺服器上，並透過 LINE 通知站長，僅用於閱讀與回覆你的留言，不會提供給其他第三方。如需刪除你的留言，請來信告知。
+- **公開留言區**：文章下方的公開留言使用 [giscus](https://giscus.app/) 服務，留言會以你的 GitHub 帳號發布在本站的 GitHub Discussions，並公開顯示。相關資料由 GitHub 處理，請參考 GitHub 隱私權聲明。
 
 本站的主機服務由 GitHub Pages 提供，GitHub 可能會為了安全與維運目的記錄訪客的 IP 位址等連線資訊，詳情請參考 [GitHub 隱私權聲明](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement)。
 

@@ -152,3 +152,6 @@ vite.config.ts.timestamp-*
 dist/
 __pycache__/
 .DS_Store
+
+# 後端程式不放在這個 repo
+server/
