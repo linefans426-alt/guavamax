@@ -288,16 +288,17 @@
 
     // 自動射擊：子彈庫存越多，射速越快
     let target = null;
-    for (const b of bugs) if (!b.dead && b.x < W - 4 && (!target || b.x < target.x)) target = b;
+    // 蟲要完整走進畫面一段距離才開始射，讓玩家看得到牠
+    for (const b of bugs) if (!b.dead && b.x < W - b.size - 12 && (!target || b.x < target.x)) target = b;
     fireT -= dt;
     if (target && ammo > 0 && fireT <= 0) {
       ammo--;
       bullets.push({ x: HERO_X + 24, y: GROUND_Y - 12 + rand(-2, 2) });
-      fireT = 1 / Math.min(40, 4 + ammo / 8);
+      fireT = 1 / Math.min(12, 2 + ammo / 20);
       if (Math.random() < 0.3) PX.beep(1200, 0.02, "square", 0.02);
     }
     for (const bl of bullets) {
-      bl.x += 190 * dt;
+      bl.x += 130 * dt;
       for (const b of bugs) {
         if (b.dead || bl.x < b.x || bl.x > b.x + b.size) continue;
         bl.dead = true;
@@ -370,7 +371,7 @@
       spitT -= dt;
       while (spitT <= 0) {
         addSeed(guava.x, MOUTH_Y, rand(-12, 12) + guava.vx * 0.15, 35, 0);
-        spitT += 1 / 4;
+        spitT += 1 / 2.5; // 每秒 2.5 顆
       }
       updateSeeds(dt);
 
@@ -383,7 +384,7 @@
 
       if (state === "play") updateBattle(dt);
       else if (state === "clear") {
-        bullets.forEach((b) => { b.x += 190 * dt; });
+        bullets.forEach((b) => { b.x += 130 * dt; });
         bullets = bullets.filter((b) => b.x < W);
         if (stateT > 1.6) { wave++; state = "play"; startWave(); }
       }
