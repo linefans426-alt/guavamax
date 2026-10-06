@@ -10,7 +10,7 @@
   const GRAV = 120;          // 重力（px/s²）
   const WIND_K = 6;          // 每 1 級風的水平加速度
   const V_MAX = 185;         // 力道 100% 時的出手速度
-  const PULL_MAX = 52;       // 拖曳多長算滿力
+  const AIM_FULL = 80;       // 手指離角色多遠算滿力
   const HP_MAX = 100;
 
   // ── 像素圖（依兩張 Q 版人物畫成像素） ──
@@ -147,6 +147,7 @@
   // ── 狀態 ──
   let state, t, stateT, mode, human; // mode: 1p / 2p；human[i]：該隊是否由玩家控制
   let players, turn, wind, wallTop, shots, splashes, clouds, msg, msgT;
+  let thrownOnce = false;   // 第一次丟之前顯示教學
   let aim, kbAngle, kbPower, kbDir, charging, used, pending, aiPlan, aiSkill, winner, prevDown;
 
   const rand = (a, b) => a + Math.random() * (b - a);
@@ -355,17 +356,17 @@
           }
           ["1", "2", "3", "4"].forEach((k, i) => { if (api.hit(k)) useItem(ITEMS[i].key); });
 
-          // 彈弓式瞄準：按住往後拉，放開就丟
-          if (tapped && !onButton && p.y > HUD_H) aim = { sx: p.x, sy: p.y, angle: 45, power: 0 };
+          // 指哪丟哪：手指從角色往想丟的方向拖，方向＝角度、離角色越遠越大力，放開就丟
+          if (tapped && !onButton && p.y > HUD_H) aim = { angle: 45, power: 0 };
           if (aim && p.down) {
-            const dx = (aim.sx - p.x) * facing(me), dy = aim.sy - p.y;
-            const len = Math.hypot(dx, dy);
-            aim.power = Math.min(1, len / PULL_MAX);
-            let ang = (Math.atan2(-dy, dx) * 180) / Math.PI;
-            aim.angle = Math.max(0, Math.min(90, ang));
+            const [hx, hy] = handPos(me);
+            const dx = (p.x - hx) * facing(me), dy = hy - p.y;
+            aim.power = Math.max(0, Math.min(1, (Math.hypot(dx, dy) - 8) / AIM_FULL));
+            aim.angle = dx <= 0 ? (dy > 0 ? 90 : 0) : Math.max(0, Math.min(90, (Math.atan2(dy, dx) * 180) / Math.PI));
+            aim.fx = p.x; aim.fy = p.y;
           }
           if (aim && released) {
-            if (aim.power > 0.1) throwNow(aim.angle, aim.power);
+            if (aim.power > 0.08) { throwNow(aim.angle, aim.power); thrownOnce = true; }
             aim = null;
           }
 
@@ -379,7 +380,7 @@
             if (kbPower <= 0) { kbPower = 0; kbDir = 1; }
           } else if (charging) {
             charging = false;
-            if (kbPower > 0.05) throwNow(kbAngle, kbPower);
+            if (kbPower > 0.05) { throwNow(kbAngle, kbPower); thrownOnce = true; }
             kbPower = 0; kbDir = 1;
           }
         } else {
@@ -473,25 +474,59 @@
         }
       });
 
-      // 瞄準輔助線（只畫方向和力道，不畫完整拋物線）
-      const showAim = state === "aim" && (aim || charging || (human[turn] && !aim));
-      if (showAim) {
+      // 瞄準輔助：角度量角器、力道條、前半段軌跡預覽（不含風，後半段要靠手感）
+      if (state === "aim") {
+        const active = !!aim || charging;
         const a = aim ? aim.angle : kbAngle;
         const pw = aim ? aim.power : kbPower;
         const [hx, hy] = handPos(turn);
+        const f = facing(turn);
         const rad = (a * Math.PI) / 180;
-        const len = 8 + pw * 34;
-        const dots = aim || charging ? 7 : 3;
-        for (let k = 1; k <= dots; k++) {
-          const d = (len * k) / dots;
-          g.rect(hx + Math.cos(rad) * d * facing(turn) - 1, hy - Math.sin(rad) * d - 1, 2, 2, k === dots ? C.yellow : C.white);
+        if (human[turn] || active) {
+          // 量角器：四分之一圓弧，黃點是目前角度
+          for (let d = 0; d <= 90; d += 10) {
+            const r2 = (d * Math.PI) / 180;
+            g.rect(hx + Math.cos(r2) * 20 * f, hy - Math.sin(r2) * 20, 1, 1, "rgba(255,241,232,0.6)");
+          }
+          g.rect(hx + Math.cos(rad) * 20 * f - 1, hy - Math.sin(rad) * 20 - 1, 3, 3, C.yellow);
         }
-        if (aim || charging) {
+        if (active) {
+          // 手指和角色之間的拉線
+          if (aim && aim.fx !== undefined) {
+            const n = 10;
+            for (let k = 1; k < n; k += 2) {
+              g.rect(hx + ((aim.fx - hx) * k) / n, hy + ((aim.fy - hy) * k) / n, 1, 1, "rgba(255,241,232,0.5)");
+            }
+          }
+          // 前 0.35 秒的軌跡預覽
+          const v = pw * V_MAX;
+          for (let k = 1; k <= 7; k++) {
+            const tt = k * 0.05;
+            const x = hx + Math.cos(rad) * v * f * tt;
+            const y = hy - Math.sin(rad) * v * tt + 0.5 * GRAV * tt * tt;
+            g.rect(x - 1, y - 1, 2, 2, k === 7 ? C.yellow : C.white);
+          }
+          // 角色旁邊的直式力道條
+          const bx = TEAMS[turn].x - 22 * f - 3, by = GROUND - 44;
+          g.rect(bx, by, 6, 40, C.ink);
+          const fh = Math.round(38 * pw);
+          g.rect(bx + 1, by + 39 - fh, 4, fh, pw > 0.85 ? C.red : pw > 0.5 ? C.orange : C.yellow);
+          // 數字
           const tx = turn === 0 ? 40 : W - 120;
           g.rect(tx, HUD_H + 3, 80, 13, "rgba(16,19,31,0.75)");
-          g.text(`力${Math.round(pw * 100)} 角${Math.round(a)}°`, tx + 40, HUD_H + 2, C.white, { align: "center" });
-          g.rect(tx + 4, HUD_H + 14, 72, 2, C.ink);
-          g.rect(tx + 4, HUD_H + 14, Math.round(72 * pw), 2, pw > 0.85 ? C.red : C.yellow);
+          g.text(`力道${Math.round(pw * 100)} 角度${Math.round(a)}°`, tx + 40, HUD_H + 2, C.white, { align: "center" });
+        }
+        // 第一次丟之前的教學提示
+        if (human[turn] && !active && !thrownOnce && stateT > 1.5) {
+          const bx = turn === 0 ? W - 176 : 4, cx = bx + 86;
+          g.rect(bx, 31, 172, 44, "rgba(16,19,31,0.85)");
+          g.text("手指按住，往想丟的方向拖", cx, 32, C.yellow, { align: "center" });
+          g.text("拖越遠越大力，放開就丟", cx, 46, C.white, { align: "center" });
+          g.text("鍵盤：↑↓角度、按住空白鍵", cx, 60, C.light, { align: "center" });
+          // 示範手勢：一個點從角色往斜上方移動
+          const k = (t % 1.6) / 1.6;
+          const [hx2, hy2] = handPos(turn);
+          g.rect(hx2 + 44 * k * facing(turn) - 2, hy2 - 20 * k - 2, 5, 5, C.yellow);
         }
       }
 
@@ -555,7 +590,7 @@
         g.rect(0, GROUND, W, H - GROUND, "#8a5a3a");
         g.rect(0, GROUND, W, 3, C.lime);
         g.text("芭樂可頌大對決", W / 2, 8, C.yellow, { align: "center", size: 24, shadow: C.ink });
-        g.text("按住往後拉、放開就丟", W / 2, 40, C.white, { align: "center" });
+        g.text("往想丟的方向拖，越遠越大力", W / 2, 40, C.white, { align: "center" });
         g.text("注意風向，越過中間的牆", W / 2, 54, C.white, { align: "center" });
         g.draw(boyIdle, 6, 34, false, 2);
         g.draw(girlIdle, W - 38, 34, true, 2);
