@@ -671,7 +671,10 @@ def render_game(g: Game, others: list[Game]) -> str:
     </div>
     <div class="game-bar">
       <ul class="game-controls">{controls}</ul>
-      <button class="px-btn game-mute" type="button" data-px-mute>SOUND ON</button>
+      <div class="game-buttons">
+        <button class="px-btn game-fs" type="button" data-px-fullscreen>全螢幕</button>
+        <button class="px-btn game-mute" type="button" data-px-mute>SOUND ON</button>
+      </div>
     </div>
     <div class="prose game-notes">
 {g.body_html}

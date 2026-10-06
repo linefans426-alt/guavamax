@@ -68,6 +68,10 @@
     const W = game.width, H = game.height;
     canvas.width = W;
     canvas.height = H;
+    // 依遊戲實際尺寸設定顯示比例（避免橫式遊戲被拉成 6:5）
+    canvas.style.aspectRatio = `${W} / ${H}`;
+    canvas.style.setProperty("--ar", String(W / H));
+    PX.setupFullscreen(canvas, W > H);
     const ctx = canvas.getContext("2d");
     ctx.imageSmoothingEnabled = false;
 
@@ -168,6 +172,57 @@
       start();
     }
     return api;
+  };
+
+  // ── 全螢幕 ──
+  // 支援 Fullscreen API 的瀏覽器用真的全螢幕；iPhone Safari 不支援，就用「鋪滿畫面」的假全螢幕
+  PX.setupFullscreen = (canvas, landscape) => {
+    const frame = canvas.closest(".game-frame");
+    const btn = document.querySelector("[data-px-fullscreen]");
+    if (!frame || !btn) return;
+    const exitBtn = document.createElement("button");
+    exitBtn.type = "button";
+    exitBtn.className = "px-btn game-fs-exit";
+    exitBtn.textContent = "✕";
+    exitBtn.setAttribute("aria-label", "退出全螢幕");
+    exitBtn.title = "退出全螢幕";
+    frame.appendChild(exitBtn);
+    if (landscape) {
+      const hint = document.createElement("p");
+      hint.className = "game-fs-rotate";
+      hint.textContent = "把手機轉成橫的，畫面會更大";
+      frame.appendChild(hint);
+    }
+    const native = !!(frame.requestFullscreen || frame.webkitRequestFullscreen);
+    const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement;
+    const sync = (on) => {
+      frame.classList.toggle("is-fs", on);
+      document.documentElement.classList.toggle("px-fs-lock", on);
+      btn.textContent = on ? "退出全螢幕" : "全螢幕";
+      canvas.dataset.focus = "1";
+    };
+    const enter = async () => {
+      if (native) {
+        try {
+          await (frame.requestFullscreen ? frame.requestFullscreen({ navigationUI: "hide" }) : frame.webkitRequestFullscreen());
+          if (landscape && screen.orientation && screen.orientation.lock) screen.orientation.lock("landscape").catch(() => {});
+          return;
+        } catch (e) { /* 失敗就改用假全螢幕 */ }
+      }
+      sync(true);
+    };
+    const exit = () => {
+      if (fsEl()) {
+        try { screen.orientation && screen.orientation.unlock && screen.orientation.unlock(); } catch (e) {}
+        (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      } else sync(false);
+    };
+    const toggle = () => (frame.classList.contains("is-fs") ? exit() : enter());
+    btn.addEventListener("click", toggle);
+    exitBtn.addEventListener("click", exit);
+    ["fullscreenchange", "webkitfullscreenchange"].forEach((ev) =>
+      document.addEventListener(ev, () => sync(fsEl() === frame)));
+    addEventListener("keydown", (e) => { if (e.key === "Escape" && frame.classList.contains("is-fs") && !fsEl()) sync(false); });
   };
 
   // 靜音按鈕（頁面上 data-px-mute 的按鈕）

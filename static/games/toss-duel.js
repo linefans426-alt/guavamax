@@ -4,7 +4,7 @@
   const W = 256, H = 144;
 
   // ── 版面與物理 ──
-  const HUD_H = 28;
+  const HUD_H = 16;
   const GROUND = 124;
   const WALL_X = 124, WALL_W = 8;
   const GRAV = 120;          // 重力（px/s²）
@@ -138,11 +138,22 @@
     { name: "Una", idle: girlIdle, throw: girlThrow, ammo: croissantSpr, color: C.orange, x: 230 },
   ];
   const ITEMS = [
-    { key: "double", label: "雙", name: "雙重投擲", tip: "這回合連丟兩顆" },
-    { key: "big", label: "巨", name: "巨大化", tip: "威力和爆炸範圍變大" },
-    { key: "calm", label: "無", name: "無風", tip: "這一丟不受風影響" },
-    { key: "heal", label: "補", name: "補血", tip: "立刻回復 25 HP" },
+    { key: "double", label: "雙投", name: "雙重投擲", tip: "這回合連丟兩顆" },
+    { key: "big", label: "巨大", name: "巨大化", tip: "威力和範圍變大" },
+    { key: "calm", label: "無風", name: "無風", tip: "這一丟不受風影響" },
+    { key: "heal", label: "補血", name: "補血", tip: "馬上回復 25 HP" },
   ];
+  // 道具列：畫在地面那一條，按鈕做大一點方便手指點
+  const BTN_W = 30, BTN_H = 17, BTN_Y = GROUND + 2;
+  const btnX = (i, k) => (i === 0 ? 2 : W - 2 - 4 * (BTN_W + 1) + 1) + k * (BTN_W + 1);
+  const btnAt = (x, y) => {
+    if (y < BTN_Y - 2) return null;
+    for (let i = 0; i < 2; i++) for (let k = 0; k < 4; k++) {
+      const bx = btnX(i, k);
+      if (x >= bx - 1 && x <= bx + BTN_W + 1) return { i, k };
+    }
+    return null;
+  };
 
   // ── 狀態 ──
   let state, t, stateT, mode, human; // mode: 1p / 2p；human[i]：該隊是否由玩家控制
@@ -178,7 +189,7 @@
     aim = null;
     kbAngle = 45; kbPower = 0; kbDir = 1; charging = false;
     aiPlan = null;
-    say(`輪到 ${TEAMS[turn].name}`, 1.4);
+    say(`輪到 ${TEAMS[turn].name}${human[turn] ? "" : "（電腦）"}`, 1.1);
   };
 
   // ── 物理：同一個函式給遊戲和電腦模擬共用 ──
@@ -237,14 +248,17 @@
     else if (p.items.double && Math.random() < 0.25) item = "double";
     const opts = { big: item === "big", calm: item === "calm" };
     const tx = TEAMS[foe].x;
+    // 先粗略掃一遍，再在最佳解附近細找（運算量約原本的四分之一，手機上不會卡一下）
     let best = null;
-    for (let a = 20; a <= 80; a += 1) {
-      for (let pw = 0.3; pw <= 1.001; pw += 0.02) {
-        const r = simulate(me, a, pw, opts);
-        const d = r.c === "body" + foe ? 0 : Math.abs(r.x - tx);
-        if (!best || d < best.d) best = { a, pw, d };
-      }
-    }
+    const tryShot = (a, pw) => {
+      if (a < 10 || a > 85 || pw < 0.25 || pw > 1) return;
+      const r = simulate(me, a, pw, opts);
+      const d = r.c === "body" + foe ? 0 : Math.abs(r.x - tx);
+      if (!best || d < best.d) best = { a, pw, d };
+    };
+    for (let a = 20; a <= 80; a += 3) for (let pw = 0.3; pw <= 1.001; pw += 0.05) tryShot(a, pw);
+    const a0 = best.a, p0 = best.pw;
+    for (let a = a0 - 3; a <= a0 + 3; a += 1) for (let pw = p0 - 0.05; pw <= p0 + 0.051; pw += 0.01) tryShot(a, pw);
     // 加一點誤差，越打越準
     const err = Math.max(1.4, 4.5 - aiSkill[me] * 0.6);
     const angle = Math.max(10, Math.min(85, best.a + gauss() * err * 1.2));
@@ -255,7 +269,7 @@
 
   const useItem = (key) => {
     const p = players[turn];
-    if (!p.items[key]) return;
+    if (!p.items[key]) { say("這個道具已經用過了", 1.2); return; }
     if (key === "heal") {
       p.items.heal = false;
       p.hp = Math.min(HP_MAX, p.hp + 25);
@@ -264,10 +278,10 @@
       PX.beep(660, 0.08); PX.beep(990, 0.12);
       return;
     }
-    if (used === key) { used = null; return; } // 再按一次取消
+    if (used === key) { used = null; say("取消道具", 0.8); return; } // 再按一次取消
     used = key;
     const it = ITEMS.find((i) => i.key === key);
-    say(`${it.name}：${it.tip}`, 1.6);
+    say(`${it.name}：${it.tip}`, 2.2);
     PX.beep(880, 0.06);
   };
 
@@ -346,13 +360,13 @@
       if (state === "aim") {
         const me = turn;
         if (human[me]) {
-          // 道具按鈕
-          const bx0 = me === 0 ? 2 : W - 64;
+          // 道具按鈕（地面那一條）
           let onButton = false;
-          if (tapped && p.y >= 13 && p.y <= 26 && p.x >= bx0 && p.x <= bx0 + 62) {
-            onButton = true;
-            const idx = Math.floor((p.x - bx0) / 16);
-            if (ITEMS[idx]) useItem(ITEMS[idx].key);
+          const hitBtn = tapped ? btnAt(p.x, p.y) : null;
+          if (tapped && p.y >= BTN_Y - 2) onButton = true;
+          if (hitBtn) {
+            if (hitBtn.i === me) useItem(ITEMS[hitBtn.k].key);
+            else say("這是對手的道具", 1);
           }
           ["1", "2", "3", "4"].forEach((k, i) => { if (api.hit(k)) useItem(ITEMS[i].key); });
 
@@ -513,16 +527,20 @@
           g.rect(bx + 1, by + 39 - fh, 4, fh, pw > 0.85 ? C.red : pw > 0.5 ? C.orange : C.yellow);
           // 數字
           const tx = turn === 0 ? 40 : W - 120;
-          g.rect(tx, HUD_H + 3, 80, 13, "rgba(16,19,31,0.75)");
-          g.text(`力道${Math.round(pw * 100)} 角度${Math.round(a)}°`, tx + 40, HUD_H + 2, C.white, { align: "center" });
+          g.rect(tx - 4, 37, 88, 14, "rgba(16,19,31,0.75)");
+          g.text(`力道${Math.round(pw * 100)} 角度${Math.round(a)}°`, tx + 40, 37, C.white, { align: "center" });
         }
         // 第一次丟之前的教學提示
         if (human[turn] && !active && !thrownOnce && stateT > 1.5) {
           const bx = turn === 0 ? W - 176 : 4, cx = bx + 86;
-          g.rect(bx, 31, 172, 44, "rgba(16,19,31,0.85)");
-          g.text("手指按住，往想丟的方向拖", cx, 32, C.yellow, { align: "center" });
-          g.text("拖越遠越大力，放開就丟", cx, 46, C.white, { align: "center" });
-          g.text("鍵盤：↑↓角度、按住空白鍵", cx, 60, C.light, { align: "center" });
+          g.rect(bx, 38, 172, 58, "rgba(16,19,31,0.88)");
+          g.text("手指按住，往想丟的方向拖", cx, 39, C.yellow, { align: "center" });
+          g.text("拖越遠越大力，放開就丟", cx, 53, C.white, { align: "center" });
+          g.text("下面是道具，丟之前點一下", cx, 67, C.lime, { align: "center" });
+          g.text("鍵盤：↑↓角度 空白鍵蓄力", cx, 81, C.light, { align: "center" });
+          // 往下指向自己的道具列
+          const ax = btnX(turn, 1) + BTN_W, ay = BTN_Y - 9 + Math.round(Math.sin(t * 8) * 2);
+          g.rect(ax - 3, ay, 7, 2, C.lime); g.rect(ax - 2, ay + 2, 5, 2, C.lime); g.rect(ax - 1, ay + 4, 3, 2, C.lime);
           // 示範手勢：一個點從角色往斜上方移動
           const k = (t % 1.6) / 1.6;
           const [hx2, hy2] = handPos(turn);
@@ -554,19 +572,22 @@
         const pl = players[i];
         const left = i === 0;
         g.text(tm.name, left ? 2 : W - 2, -1, tm.color, { align: left ? "left" : "right" });
+        if (turn === i && state !== "title" && state !== "over" && Math.floor(t * 3) % 2) g.rect(left ? 2 : W - 26, 13, 24, 2, tm.color);
         const bx = left ? 38 : W - 94;
         g.rect(bx, 3, 54, 6, C.ink);
         const w = Math.round((52 * pl.hp) / HP_MAX);
         g.rect(left ? bx + 1 : bx + 53 - w, 4, w, 4, pl.hp > 50 ? C.lime : pl.hp > 25 ? C.yellow : C.red);
-        // 道具按鈕
-        const bx0 = left ? 2 : W - 64;
+        // 道具按鈕：輪到誰，誰的按鈕就亮起來
+        const mine = turn === i && (state === "aim");
         ITEMS.forEach((it, k) => {
-          const x = bx0 + k * 16, y = 14;
+          const x = btnX(i, k), y = BTN_Y;
           const have = pl.items[it.key];
           const sel = used === it.key && turn === i;
-          g.rect(x, y, 14, 12, sel ? C.yellow : have ? (turn === i ? C.light : C.gray) : "#2a2535");
-          g.rect(x + 1, y + 1, 12, 10, sel ? C.orange : have ? C.navy : "#1a1626");
-          g.text(it.label, x + 7, y - 1, have ? C.white : C.gray, { align: "center" });
+          const blink = sel && Math.floor(t * 4) % 2;
+          g.rect(x, y, BTN_W, BTN_H, sel ? (blink ? C.white : C.yellow) : have && mine ? C.white : "#3a2a20");
+          g.rect(x + 1, y + 1, BTN_W - 2, BTN_H - 2, sel ? C.orange : have ? (mine ? C.navy : "#4a3a50") : "#2a2018");
+          g.text(it.label, x + BTN_W / 2, y + 2, have ? (mine ? C.white : C.light) : "#6a5a50", { align: "center" });
+          if (!have) g.rect(x + 3, y + BTN_H / 2, BTN_W - 6, 1, "#6a5a50");
         });
       });
 
@@ -577,11 +598,17 @@
         g.rect(110 + k * 5, 4, 4, 5, k < n ? (n >= 4 ? C.red : C.yellow) : "#3a3550");
       }
       g.text(n ? `${wind > 0 ? "→" : "←"}${n}` : "無", 137, -1, n >= 4 ? C.red : C.white);
-      g.text(TEAMS[turn].name + (human[turn] ? "" : "（電腦）"), W / 2, 14, TEAMS[turn].color, { align: "center" });
+      // 已選道具：頭上顯示圖示
+      if (used && state === "aim") {
+        const it = ITEMS.find((x) => x.key === used);
+        const hx = TEAMS[turn].x;
+        g.rect(hx - 15, GROUND - 76, 30, 14, C.orange);
+        g.text(it.label, hx, GROUND - 76, C.white, { align: "center" });
+      }
 
       if (msgT > 0 && state !== "title") {
-        g.rect(W / 2 - 70, 46, 140, 15, "rgba(16,19,31,0.75)");
-        g.text(msg, W / 2, 47, C.white, { align: "center" });
+        g.rect(W / 2 - 90, 20, 180, 15, "rgba(16,19,31,0.8)");
+        g.text(msg, W / 2, 21, C.white, { align: "center" });
       }
 
       // 覆蓋畫面
