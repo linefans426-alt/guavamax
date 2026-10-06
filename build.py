@@ -113,7 +113,28 @@ BRICK_SPRITE = [
 ]
 BRICK_COLORS = {"R": "#ff004d", "O": "#ffa300", "Y": "#ffec27", "L": "#00e436", "B": "#29adff",
                 "P": "#ff77a8", "G": "#008751", "W": "#fff1e8", "Q": "#ff77a8"}
+SPIT_SPRITE = [
+    "......GG........",
+    ".....GG.........",
+    "....KKKKKK......",
+    "...KDDDDDDK.....",
+    "..KDPPPPPPDK....",
+    "..KDPWKPWKDK....",
+    "..KDPPPPPPDK....",
+    "..KDPPKKPPDK....",
+    "...KDPPPPDK.....",
+    "....KKKKKK......",
+    "......Y.........",
+    "....Y...Y.......",
+    "..BBBB..Y...CCCC",
+    "..BBBB.....YCCCC",
+    "...........Y....",
+    "......Y.........",
+]
+SPIT_COLORS = {"G": "#00e436", "K": "#241a3a", "D": "#008751", "P": "#ff77a8", "W": "#fff1e8",
+               "Y": "#ffccaa", "B": "#29adff", "C": "#00e436"}
 COVERS = {"guava": (GUAVA_SPRITE, SPRITE_COLORS), "bug": (BUG_SPRITE, BUG_COLORS),
+          "spit": (SPIT_SPRITE, SPIT_COLORS),
           "bricks": (BRICK_SPRITE, BRICK_COLORS)}
 
 
@@ -243,6 +264,7 @@ class Game:
     description: str
     script: str
     cover: str
+    portrait: bool
     controls: list[str]
     order: int
     body_html: str
@@ -265,6 +287,7 @@ def load_games() -> list[Game]:
             description=meta.get("description", ""),
             script=meta["script"],
             cover=meta.get("cover", "guava"),
+            portrait=str(meta.get("portrait", "")).lower() == "true",
             controls=meta.get("controls", []),
             order=int(meta.get("order", 99)),
             body_html=enhance_html(make_md().convert(body)),
@@ -621,8 +644,8 @@ def render_game(g: Game, others: list[Game]) -> str:
 </section>
 <section class="section section-tight">
   <div class="container narrow">
-    <div class="game-frame">
-      <canvas id="game" class="game-canvas" aria-label="{esc(g.title)} 遊戲畫面"></canvas>
+    <div class="game-frame{' is-portrait' if g.portrait else ''}">
+      <canvas id="game" class="game-canvas{' is-portrait' if g.portrait else ''}" aria-label="{esc(g.title)} 遊戲畫面"></canvas>
     </div>
     <div class="game-bar">
       <ul class="game-controls">{controls}</ul>

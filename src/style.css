@@ -534,3 +534,7 @@ a.cabinet:hover .cabinet-name { color: var(--pink); }
 .comments-title { font-family: var(--font-pixel); -webkit-font-smoothing: none; font-size: 24px; margin: 0 0 4px; }
 .comments-note { font-size: 14px; color: var(--ink-soft); margin: 0 0 16px; }
 .giscus-mount { min-height: 120px; }
+
+/* 直式遊戲畫面 */
+.game-frame.is-portrait { max-width: 420px; margin: 0 auto; }
+.game-canvas.is-portrait { aspect-ratio: 5 / 8; }
