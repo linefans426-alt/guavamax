@@ -134,8 +134,8 @@
 
   // ── 隊伍與道具 ──
   const TEAMS = [
-    { name: "芭樂隊", idle: boyIdle, throw: boyThrow, ammo: guavaSpr, color: C.lime, x: 26 },
-    { name: "可頌隊", idle: girlIdle, throw: girlThrow, ammo: croissantSpr, color: C.orange, x: 230 },
+    { name: "Max", idle: boyIdle, throw: boyThrow, ammo: guavaSpr, color: C.lime, x: 26 },
+    { name: "Una", idle: girlIdle, throw: girlThrow, ammo: croissantSpr, color: C.orange, x: 230 },
   ];
   const ITEMS = [
     { key: "double", label: "雙", name: "雙重投擲", tip: "這回合連丟兩顆" },
@@ -177,7 +177,7 @@
     aim = null;
     kbAngle = 45; kbPower = 0; kbDir = 1; charging = false;
     aiPlan = null;
-    say(`${TEAMS[turn].name}的回合`, 1.4);
+    say(`輪到 ${TEAMS[turn].name}`, 1.4);
   };
 
   // ── 物理：同一個函式給遊戲和電腦模擬共用 ──
@@ -328,7 +328,7 @@
       players.forEach((pl) => { pl.hurt = Math.max(0, pl.hurt - dt); pl.throwT = Math.max(0, pl.throwT - dt); });
 
       if (state === "title") {
-        // 三個按鈕：1P 芭樂隊 / 1P 可頌隊 / 2P 對戰
+        // 三個按鈕：1P 玩 Max / 1P 玩 Una / 2P 對戰
         let pick = null;
         if (api.hit("1")) pick = "1p";
         if (api.hit("2")) pick = "1p-girl";
@@ -565,8 +565,8 @@
           g.text(label, x + 38, 81, C.ink, { align: "center" });
           g.text(sub, x + 38, 95, C.ink, { align: "center" });
         };
-        btn(8, "1P 單人", "玩芭樂隊", C.lime);
-        btn(90, "1P 單人", "玩可頌隊", C.orange);
+        btn(8, "1P 單人", "玩 Max", C.lime);
+        btn(90, "1P 單人", "玩 Una", C.orange);
         btn(172, "2P 對戰", "同台輪流", C.pink);
         g.text("鍵盤：按 1／2／3 選擇", W / 2, 111, C.light, { align: "center" });
       }
