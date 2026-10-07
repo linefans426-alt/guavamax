@@ -13,7 +13,7 @@
   每款遊戲都要有「## 玩法說明」和「## 開發筆記」。
 - 遊戲封面像素圖寫在 `build.py` 的 `COVERS`。
 - `static/games/px.js`：小型 canvas 遊戲引擎 `PX`（sprite、run、beep、best、PICO-8 色盤 `PX.C`、60Hz 固定步長）。
-  遊戲：guava-catch、bug-hunt、brick-breaker、seed-rush、toss-duel。
+  遊戲：guava-catch、bug-hunt、brick-breaker、seed-rush、toss-duel、fluffy-dash。
 - `src/`：style.css、main.js（深淺色、私訊表單、giscus 延遲載入）。
 
 ## 規則

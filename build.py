@@ -133,6 +133,25 @@ SPIT_SPRITE = [
 ]
 SPIT_COLORS = {"G": "#00e436", "K": "#241a3a", "D": "#008751", "P": "#ff77a8", "W": "#fff1e8",
                "Y": "#ffccaa", "B": "#29adff", "C": "#00e436"}
+DOG_SPRITE = [
+    "................",
+    "........WWWW....",
+    "......WWWWWWWW..",
+    ".....WWWWWWWWWW.",
+    ".....WKKWWWWKKWL",
+    ".....WKKWWWWKKWL",
+    ".....RRWWNNWWRRL",
+    "..W..WWWWNNWWWW.",
+    ".WW...WWWWWWWW..",
+    ".WWWWWWWWWWWWW..",
+    "LWWWWWWWWWWWWWL.",
+    "LWWWWWWWWWWWWWL.",
+    ".LWWWWWWWWWWWL..",
+    "..WW.WW..WW.WW..",
+    "..LL.LL..LL.LL..",
+    "GGGGGGGGGGGGGGGG",
+]
+DOG_COLORS = {"W": "#fff1e8", "L": "#c2c3c7", "K": "#241a3a", "N": "#16121f", "R": "#ff77a8", "G": "#00e436"}
 TOSS_SPRITE = [
     "................",
     ".....Y.Y.Y......",
@@ -157,7 +176,8 @@ TOSS_COLORS = {"Y": "#fff1e8", "K": "#241a3a", "L": "#00e436", "P": "#ff77a8", "
 COVERS = {"guava": (GUAVA_SPRITE, SPRITE_COLORS), "bug": (BUG_SPRITE, BUG_COLORS),
           "spit": (SPIT_SPRITE, SPIT_COLORS),
           "bricks": (BRICK_SPRITE, BRICK_COLORS),
-          "toss": (TOSS_SPRITE, TOSS_COLORS)}
+          "toss": (TOSS_SPRITE, TOSS_COLORS),
+          "dog": (DOG_SPRITE, DOG_COLORS)}
 
 
 def sprite_svg(rows: list[str], colors: dict[str, str], title: str = "") -> str:
