@@ -583,7 +583,7 @@ def render_post(p: Post, prev_post: Post | None, next_post: Post | None, draft: 
     </div>
     <div class="post-end">
       <p class="post-end-title">STAGE CLEAR!</p>
-      <p>獲得 EXP +{p.minutes * 10}。有問題或想看的主題，歡迎<a href="/contact/" class="contact-link">私訊留言給我</a>。</p>
+      <p>獲得 EXP +{p.minutes * 10}。有問題或想看的主題，歡迎<a href="/contact/" class="contact-link">寫信告訴我</a>。</p>
     </div>
     {"" if draft else comments_block()}
     <nav class="post-nav" aria-label="上一篇與下一篇">{"".join(nav_parts)}</nav>

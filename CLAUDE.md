@@ -18,6 +18,7 @@
 
 ## 規則
 - **留言後端（PHP）與任何 server 設定、部署說明，絕對不要放進這個 repo**（`server/` 已在 .gitignore）。
+- 私訊表單後端尚未部署：`site.json` 的 `contact_endpoint` 先留空（表單不顯示），網址暫放在 `contact_endpoint_pending`。後端上線後把網址搬回 `contact_endpoint`，並把 about／contact 頁的「在下面留言」文字補回來。
 - 不放任何 secret；`site.json` 只放公開值（Turnstile 只放 site key）。
 - 遊戲不使用他人角色或品牌（如寶可夢），美術自己畫像素圖。
 - commit 前先 `python3 build.py` 確認建置成功；推送流程：

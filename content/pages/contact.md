@@ -7,6 +7,4 @@ contact_form: true
 
 有問題想問、發現文章有錯，或是想聊聊 AI 導入、LINE 應用開發，甚至只是想聊動漫和遊戲，都歡迎留言給我。
 
-留言只有我看得到。如果希望收到回覆，記得留下 Email。
-
-也可以直接寄信到 <a href="mailto:linefans426@gmail.com">linefans426@gmail.com</a>。
+歡迎直接寄信到 <a href="mailto:linefans426@gmail.com">linefans426@gmail.com</a>，我看到就會回覆。

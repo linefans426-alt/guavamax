@@ -55,6 +55,6 @@ description: 關於 GUAVAMAX：十多年實戰經驗的軟體開發者，負責�
 
 ## 聯絡我
 
-如果文章有錯誤或過時的地方、想討論 AI 導入或 LINE 應用開發，或者只是想聊聊動漫和遊戲，都歡迎直接在下面留言給我，或寄信到 <a href="mailto:linefans426@gmail.com">linefans426@gmail.com</a>。
+如果文章有錯誤或過時的地方、想討論 AI 導入或 LINE 應用開發，或者只是想聊聊動漫和遊戲，都歡迎寄信到 <a href="mailto:linefans426@gmail.com">linefans426@gmail.com</a>。
 
 我會盡量回覆每一則訊息。
