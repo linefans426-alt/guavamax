@@ -18,6 +18,7 @@ draft: true
 - **Jev 不寫字，只做判斷**：你給它選項，它回答「選哪個」和「有多確定」，不會產生回覆、程式碼或解釋。
 - **最適合的工作是分流**：客服意圖分類、要不要轉真人、該看哪份知識檔、該用哪個模型。
 - **它不取代 LLM，而是站在 LLM 前面**：簡單的判斷交給 Jev，真正要寫回答、要推理的部分還是交給 ChatGPT、Claude 這類模型。
+- **已有大公司實際導入**：Vercel 把 Agent 指令的安全審查從 OpenAI 模型換成 Jev，速度快了 5～18 倍。
 - **要搭配信心值使用**：Jev 會回傳機率，信心不夠時就升級給 LLM 或真人，這才是安全的用法。
 - **小提醒**：Jev 本身是 TypeSafe AI 的雲端服務，不是開源模型；開源的是社群做的路由工具和「Open Jev」復刻版。
 
@@ -104,6 +105,23 @@ Jev 的輸出不是一段文字，而是有型別的答案。官方把問題分�
 
 如果某些通道的回覆是固定的（例如直接回傳退貨表單連結、或轉真人），那整條路可以完全不經過 LLM，這種情況省下的時間和 token 最明顯。
 
+## 實際案例：Vercel 用 Jev 加速安全審查
+
+要說 Jev 實際能省多少時間，Vercel 是很好的例子。
+
+Vercel 內部有讓 AI Agent 執行指令的工具，而在 Agent 真的去跑一條指令之前，會先經過一道**安全審查**：判斷這條指令能不能執行，會不會刪錯東西、碰到不該碰的資源。這個「審查員」原本是用 OpenAI 的模型（Luna 5.6）來擔任。
+
+問題是，Agent 每一步都要先過審查，審查員只要慢一點，整個流程就跟著卡住。而「這條指令安不安全」本質上就是一道是非題，正好是 Jev 擅長的事。
+
+Vercel 把審查這一步換成 Jev 之後，根據 TechCrunch 和 The Next Web 的報導：
+
+- 這一步的速度**快了 5～18 倍**（以 p95 延遲來看，也就是比較慢的那 5% 請求）
+- 準確度反而比原本更好（報導沒有公布具體數字）
+
+這個案例剛好說明了 Jev 的定位：**審查員不需要會寫文章，只需要又快又準地說「可以」或「不行」**。把這種卡在每一步前面的判斷交給 Jev，省下的時間會在整個流程裡一直累積。
+
+Vercel 也在 2026 年 9 月把 Jev 上架到自家的 AI Gateway，開發者可以直接透過 AI SDK 呼叫。報導提到，上架 24 小時內就有將近 13% 的付費團隊用過它，是 Vercel 今年採用速度最快的模型。
+
 ## 另一種用法：讓 Jev 決定用哪個模型
 
 除了分流客服，Jev 也被拿來做**模型路由**。OpenRouter 在 2026 年 9 月 25 日推出了 **Jev Router**：每個請求先讓 Jev 判斷任務類型和難度，再挑出夠用、又最便宜的模型。
@@ -167,3 +185,5 @@ Jev 目前只支援文字輸入。客人傳商品照片說「這個壞了」，�
 - [TypeSafe 官方文件：Models 與價格](https://docs.typesafe.ai/models)
 - [OpenRouter：Jev Router 說明](https://openrouter.ai/docs/guides/routing/routers/jev-router)
 - [PyPI：jev-model-router](https://pypi.org/project/jev-model-router/)
+- [The Next Web：The fastest-adopted model on Vercel this year cannot write a word](https://thenextweb.com/news/typesafe-jev-decision-model-vercel-fastest-adopted)
+- [Vercel Changelog：Jev now available on AI Gateway](https://vercel.com/changelog/typesafe-ai-jev-now-available-on-ai-gateway)
