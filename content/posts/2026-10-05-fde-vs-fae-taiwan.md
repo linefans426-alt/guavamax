@@ -2,6 +2,7 @@
 title: FDE 和 FAE 差在哪？為什麼前線部署工程師爆紅，台灣卻不好推
 description: FDE（前線部署工程師）是 2026 年成長最快的 AI 職缺之一。本文比較 FDE 與台灣熟悉的 FAE，整理它爆紅的原因、美洲與亞洲市場的差異，以及我對台灣 SaaS 推 FDE 的看法。
 date: 2026-10-05 02:40
+category: dev
 tags: [AI 應用, 職場心得, FDE, SaaS]
 slug: fde-vs-fae-taiwan
 ---

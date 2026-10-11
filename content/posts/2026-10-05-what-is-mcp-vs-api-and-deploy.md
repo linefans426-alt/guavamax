@@ -2,6 +2,7 @@
 title: MCP 是什麼？和 API 差在哪、怎麼選，再一步步部署自己的 MCP Server
 description: MCP 讓 AI 用統一的方式接上各種工具與資料。本文用表格比較 MCP 與 API 的差異與選擇方式，並用 Python 實作一個 MCP Server，從本機測試一路部署到自己的伺服器。
 date: 2026-10-05 01:50
+category: dev
 tags: [AI 應用, MCP, AI Agent, Python, 部署]
 slug: what-is-mcp-vs-api-and-deploy
 ---

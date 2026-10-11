@@ -14,5 +14,25 @@
     "category": "Announcements",
     "category_id": ""
   },
-  "turnstile_site_key": ""
+  "turnstile_site_key": "",
+  "categories": [
+    {
+      "slug": "dev",
+      "name": "程式相關",
+      "en": "CODE",
+      "desc": "AI 應用、開發工具、系統實作與程式筆記。"
+    },
+    {
+      "slug": "apple",
+      "name": "蘋果相關",
+      "en": "APPLE",
+      "desc": "Mac、iPhone 與蘋果生態系的使用心得和設定教學。"
+    },
+    {
+      "slug": "life",
+      "name": "生活分享",
+      "en": "LIFE",
+      "desc": "工作之外的日常、想法與生活紀錄。"
+    }
+  ]
 }

@@ -7,6 +7,8 @@
 - `build.py`：自製靜態網站產生器（markdown + pygments），輸出到 `dist/`（不進 git）。設定在 `site.json`。
 - 本機建置：`python3 build.py`；預覽：`python3 -m http.server 8765 --directory dist`。
 - `content/posts/*.md`：文章。front matter 有 `draft: true` → 只出現在 `/drafts/`（noindex、無廣告）。
+- 文章分類：`site.json` 的 `categories`（dev 程式相關／apple 蘋果相關／life 生活分享）；front matter 寫 `category: dev` 或 `category: [dev, apple]`。
+  每篇的 `tags` 都可點擊：`/tags/<tag>/` 全站篩選、`/category/<cat>/<tag>/` 分類內篩選（tag 轉小寫、空白換成 `-`）。
 - 排程發布：`date` 以台北時間解讀，未來日期先隱藏；Actions 每小時（`1 * * * *`）重建，時間到自動上線。
 - `content/pages/`：關於、聯絡、隱私權頁。
 - `content/games/*.md`：遊戲頁（title、title_en、slug、description、script、cover、order、controls、`portrait: true` 為直式）。

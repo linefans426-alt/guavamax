@@ -2,6 +2,7 @@
 title: Claude Code 很好用，但 Token 總是不夠？8 個實用省 Token 技巧
 description: Claude Code 用一陣子就碰到用量上限？多半是因為它每次都在重新探索專案。本文教你用 CLAUDE.md、Skill、MCP 和幾個指令，讓 Claude 少走冤枉路，大幅節省 Token。
 date: 2026-10-05 02:50
+category: dev
 tags: [AI 應用, Claude Code, Token, MCP, 效率]
 slug: save-claude-code-tokens
 ---

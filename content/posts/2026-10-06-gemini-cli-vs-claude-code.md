@@ -2,6 +2,7 @@
 title: Gemini CLI 已轉為 Antigravity CLI：和 Claude Code 怎麼選？
 description: Google 的終端機 AI 工具 Gemini CLI 在 2026 年 6 月轉型為 Antigravity CLI。這篇整理這次轉換對使用者的影響，並比較它和 Claude Code 的功能差異與適合情境。
 date: 2026-10-06 00:40
+category: dev
 tags: [AI 應用, Claude Code, Gemini, 工具比較]
 slug: gemini-cli-vs-claude-code
 ---

@@ -2,6 +2,7 @@
 title: n8n 還需要學嗎？和 ChatGPT、Claude 的排程任務差在哪
 description: n8n 是熱門的流程自動化工具，但現在 ChatGPT 和 Claude 也能排程、自動幫你做事。本文整理 n8n 的優缺點，比較它和 AI 排程任務的根本差異，以及什麼情境該用哪一個。
 date: 2026-10-05 20:45
+category: dev
 tags: [AI 應用, n8n, 自動化, AI Agent, Claude, ChatGPT]
 slug: n8n-vs-ai-scheduled-tasks
 ---

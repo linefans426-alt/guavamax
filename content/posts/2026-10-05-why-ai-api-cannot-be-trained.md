@@ -2,6 +2,7 @@
 title: 「AI 用越久會越懂我」是真的嗎？向老闆解釋 API 不會被訓練的兩年
 description: 很多人以為跟 ChatGPT 聊越多，AI 就被「訓練」得越懂自己。這篇整理我花了兩年向老闆解釋的心得：對話記憶、上下文、API 和微調到底差在哪，以及為什麼我最後還是建議直接用 API。
 date: 2026-10-05 02:00
+category: dev
 tags: [AI 應用, 職場心得, API, LLM]
 slug: why-ai-api-cannot-be-trained
 ---

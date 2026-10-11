@@ -18,6 +18,7 @@ import math
 import re
 import shutil
 import sys
+from urllib.parse import quote
 from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -38,6 +39,19 @@ BUILD_ID = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
 NOW_LOCAL = datetime.now(ZoneInfo("Asia/Taipei")).replace(tzinfo=None)
 
 esc = html.escape
+
+# 文章大分類（設定在 site.json 的 categories）
+CATEGORIES = SITE.get("categories", [])
+CAT_BY_SLUG = {c["slug"]: c for c in CATEGORIES}
+
+
+def tag_slug(tag: str) -> str:
+    return re.sub(r"\s+", "-", tag.strip().lower())
+
+
+def tag_url(tag: str, cat: str | None = None) -> str:
+    base = f"/category/{cat}/" if cat else "/tags/"
+    return base + quote(tag_slug(tag)) + "/"
 
 
 # ─────────────────────────── 像素芭樂圖示 ───────────────────────────
@@ -211,6 +225,7 @@ class Post:
     description: str
     date: date
     tags: list[str]
+    categories: list[str]
     body_html: str
     toc_html: str
     minutes: int
@@ -281,6 +296,8 @@ def load_posts(drafts: bool = False) -> list[Post]:
                 extra={"sort": datetime.fromisoformat(meta["date"])},
                 updated=date.fromisoformat(meta["updated"]) if meta.get("updated") else None,
                 tags=meta.get("tags", []),
+                categories=[c for c in (meta["category"] if isinstance(meta.get("category"), list)
+                                        else [meta.get("category") or "dev"]) if c in CAT_BY_SLUG] or ["dev"],
                 draft=str(meta.get("draft", "")).lower() == "true",
                 body_html=body_html,
                 toc_html=md.toc,
@@ -379,7 +396,7 @@ def layout(*, title: str, description: str, path: str, body: str, og_type: str =
             f'?client={esc(SITE["adsense_client"])}" crossorigin="anonymous"></script>'
         )
     nav_items = "".join(
-        f'<a class="nav-link{" is-active" if path.startswith(href) else ""}" href="{href}">'
+        f'<a class="nav-link{" is-active" if path.startswith(href) or (href == "/posts/" and path.startswith(("/category/", "/tags/"))) else ""}" href="{href}">'
         f'<span class="nav-en">{en}</span><span class="nav-zh">{zh}</span></a>'
         for href, zh, en in NAV
     )
@@ -442,8 +459,36 @@ def layout(*, title: str, description: str, path: str, body: str, og_type: str =
 """
 
 
-def tag_list(tags: list[str]) -> str:
-    return "".join(f'<li class="tag">{esc(t)}</li>' for t in tags)
+def tag_list(tags: list[str], cat: str | None = None, active: str | None = None) -> str:
+    """每個 Hashtag 都是連結：有 cat 時連到「分類內篩選」頁，否則連到全站標籤頁。"""
+    return "".join(
+        f'<li><a class="tag{" is-active" if t == active else ""}" href="{tag_url(t, cat)}"'
+        f'{" aria-current=\"page\"" if t == active else ""}>#{esc(t)}</a></li>'
+        for t in tags
+    )
+
+
+def cat_badges(p: Post) -> str:
+    return "".join(
+        f'<a class="cat-badge" href="/category/{c}/">{esc(CAT_BY_SLUG[c]["name"])}</a>' for c in p.categories
+    )
+
+
+def tags_by_count(posts: list[Post]) -> list[str]:
+    count: dict[str, int] = {}
+    for p in posts:
+        for t in p.tags:
+            count[t] = count.get(t, 0) + 1
+    return sorted(count, key=lambda t: (-count[t], t))
+
+
+def cat_tabs(all_posts: list[Post], active: str | None) -> str:
+    items = [f'<a class="cat-tab{" is-active" if active is None else ""}" href="/posts/">全部<span>{len(all_posts)}</span></a>']
+    for c in CATEGORIES:
+        n = sum(1 for p in all_posts if c["slug"] in p.categories)
+        cls = " is-active" if active == c["slug"] else ""
+        items.append(f'<a class="cat-tab{cls}" href="/category/{c["slug"]}/">{esc(c["name"])}<span>{n}</span></a>')
+    return f'<nav class="cat-tabs" aria-label="文章分類">{"".join(items)}</nav>'
 
 
 def post_card(p: Post, index: int) -> str:
@@ -459,8 +504,8 @@ def post_card(p: Post, index: int) -> str:
       <time datetime="{p.date.isoformat()}">{fmt_date(p.date)}</time>
       <span>約 {p.minutes} 分鐘</span>
     </div>
-    <ul class="tags">{tag_list(p.tags)}</ul>
   </a>
+  <div class="slot-foot">{cat_badges(p)}<ul class="tags">{tag_list(p.tags)}</ul></div>
 </article>"""
 
 
@@ -518,23 +563,75 @@ def render_home(posts: list[Post], games: list) -> str:
     return layout(title=SITE["title"], description=SITE["description"], path="/", body=body, body_class="page-home")
 
 
-def render_post_list(posts: list[Post]) -> str:
-    cards = "".join(post_card(p, i + 1) for i, p in enumerate(posts))
-    all_tags = sorted({t for p in posts for t in p.tags})
+def empty_slots() -> str:
+    return '<p class="empty-slot">NO SAVE DATA・這個分類還沒有文章，敬請期待。</p>'
+
+
+def list_page(*, all_posts: list[Post], posts: list[Post], path: str, kicker: str, title: str, lead: str,
+              description: str, active_cat: str | None, tag_block: str) -> str:
+    cards = "".join(post_card(p, i + 1) for i, p in enumerate(posts)) if posts else ""
+    grid = f'<div class="slot-grid">{cards}</div>' if posts else empty_slots()
     body = f"""
 <section class="page-head">
   <div class="container">
-    <p class="page-kicker">LOAD GAME</p>
-    <h1 class="page-title">所有文章</h1>
-    <p class="page-lead">技術案例、AI 應用與開發筆記，選一個存檔點繼續冒險。</p>
-    <ul class="tags tags-lg">{tag_list(all_tags)}</ul>
+    <p class="page-kicker">{kicker}</p>
+    <h1 class="page-title">{esc(title)}</h1>
+    <p class="page-lead">{esc(lead)}</p>
+    {cat_tabs(all_posts, active_cat)}
+    {tag_block}
   </div>
 </section>
-<section class="section">
-  <div class="container"><div class="slot-grid">{cards}</div></div>
+<section class="section section-tight">
+  <div class="container">{grid}</div>
 </section>
 """
-    return layout(title="所有文章", description="技術案例、AI 應用與開發筆記列表。", path="/posts/", body=body)
+    return layout(title=title, description=description, path=path, body=body)
+
+
+def render_post_list(posts: list[Post]) -> str:
+    groups = []
+    for c in CATEGORIES:
+        cposts = [p for p in posts if c["slug"] in p.categories]
+        if not cposts:
+            continue
+        groups.append(
+            f'<div class="tag-group"><a class="tag-group-title" href="/category/{c["slug"]}/">'
+            f'{esc(c["name"])}</a><ul class="tags">{tag_list(tags_by_count(cposts), c["slug"])}</ul></div>'
+        )
+    return list_page(all_posts=posts, posts=posts, path="/posts/", kicker="LOAD GAME", title="所有文章",
+                     lead="技術案例、AI 應用與生活筆記。先選分類，再點 Hashtag 篩選文章。",
+                     description="技術案例、AI 應用與開發筆記列表。", active_cat=None,
+                     tag_block=f'<div class="tag-groups">{"".join(groups)}</div>')
+
+
+def cat_tag_block(cat: str, cposts: list[Post], active: str | None) -> str:
+    all_chip = (f'<li><a class="tag tag-all{" is-active" if active is None else ""}" href="/category/{cat}/">'
+                f'全部</a></li>')
+    return f'<ul class="tags tags-filter">{all_chip}{tag_list(tags_by_count(cposts), cat, active)}</ul>'
+
+
+def render_category(all_posts: list[Post], c: dict) -> str:
+    cposts = [p for p in all_posts if c["slug"] in p.categories]
+    return list_page(all_posts=all_posts, posts=cposts, path=f'/category/{c["slug"]}/', kicker=c["en"],
+                     title=c["name"], lead=c["desc"], description=c["desc"], active_cat=c["slug"],
+                     tag_block=cat_tag_block(c["slug"], cposts, None) if cposts else "")
+
+
+def render_category_tag(all_posts: list[Post], c: dict, tag: str) -> str:
+    cposts = [p for p in all_posts if c["slug"] in p.categories]
+    tposts = [p for p in cposts if tag in p.tags]
+    return list_page(all_posts=all_posts, posts=tposts, path=tag_url(tag, c["slug"]), kicker=f'{c["en"]} · #TAG',
+                     title=f'{c["name"]}・#{tag}', lead=f'「{c["name"]}」分類中，標記 #{tag} 的文章，共 {len(tposts)} 篇。',
+                     description=f'{c["name"]}分類中關於 {tag} 的文章。', active_cat=c["slug"],
+                     tag_block=cat_tag_block(c["slug"], cposts, tag))
+
+
+def render_tag(all_posts: list[Post], tag: str) -> str:
+    tposts = [p for p in all_posts if tag in p.tags]
+    return list_page(all_posts=all_posts, posts=tposts, path=tag_url(tag), kicker="#TAG", title=f"#{tag}",
+                     lead=f"所有標記 #{tag} 的文章，共 {len(tposts)} 篇。",
+                     description=f"關於 {tag} 的文章列表。", active_cat=None,
+                     tag_block=f'<ul class="tags tags-filter">{tag_list(tags_by_count(all_posts), None, tag)}</ul>')
 
 
 def render_post(p: Post, prev_post: Post | None, next_post: Post | None, draft: bool = False) -> str:
@@ -567,6 +664,7 @@ def render_post(p: Post, prev_post: Post | None, next_post: Post | None, draft: 
 {draft_banner(p) if draft else ''}
 <article class="post">
   <header class="post-head container narrow">
+    <div class="post-cats">{cat_badges(p)}</div>
     <ul class="tags">{tag_list(p.tags)}</ul>
     <h1 class="post-title">{esc(p.title)}</h1>
     <p class="post-desc">{esc(p.description)}</p>
@@ -854,6 +952,15 @@ def build() -> None:
     games = load_games()
     write("/", render_home(posts, games))
     write("/posts/", render_post_list(posts))
+    list_pages = ["/posts/"]
+    for c in CATEGORIES:
+        write(f'/category/{c["slug"]}/', render_category(posts, c))
+        list_pages.append(f'/category/{c["slug"]}/')
+        for t in {t for p in posts if c["slug"] in p.categories for t in p.tags}:
+            write(f'/category/{c["slug"]}/{tag_slug(t)}/', render_category_tag(posts, c, t))
+    for t in {t for p in posts for t in p.tags}:
+        write(f"/tags/{tag_slug(t)}/", render_tag(posts, t))
+        list_pages.append(tag_url(t))
     for i, p in enumerate(posts):
         prev_post = posts[i + 1] if i + 1 < len(posts) else None
         next_post = posts[i - 1] if i > 0 else None
@@ -882,7 +989,7 @@ def build() -> None:
 
     write("/404.html", render_404())
     write("/feed.xml", render_feed(posts))
-    write("/sitemap.xml", render_sitemap(posts, ["/", "/posts/", "/arcade/", *[g.url for g in games], *simple_pages]))
+    write("/sitemap.xml", render_sitemap(posts, ["/", *list_pages, "/arcade/", *[g.url for g in games], *simple_pages]))
     (DIST / "robots.txt").write_text(f"User-agent: *\nAllow: /\n\nSitemap: {SITE['url']}/sitemap.xml\n", encoding="utf-8")
     if SITE.get("adsense_client"):
         pub = SITE["adsense_client"].replace("ca-", "")

@@ -103,7 +103,7 @@ a:hover { color: var(--ink); }
 :focus-visible { outline: 3px dashed var(--pink); outline-offset: 3px; }
 
 /* ── 像素字型工具 ── */
-.pixel, .brand-name, .nav-link, .px-btn, .tag, .section-title, .page-title, .page-kicker,
+.pixel, .brand-name, .nav-link, .px-btn, .tag, .cat-tab, .cat-badge, .tag-group-title, .empty-slot, .section-title, .page-title, .page-kicker,
 .hero-title, .hero-kicker, .press-start, .stat-bar, .slot-head, .slot-title, .post-title,
 .prose h2, .toc summary, .post-end-title, .cabinet-name, .cabinet-status, .go-title,
 .go-continue, .xp-label, .copy-btn, .footer-title, .admonition-title, .coin-slot, .section-more,
@@ -231,10 +231,45 @@ a:hover { color: var(--ink); }
 .slot-desc { margin: 0 16px 12px; font-size: 15px; color: var(--ink-soft); line-height: 1.7; flex: 1; }
 .slot-meta { display: flex; gap: 16px; margin: 0 16px 12px; font-size: 14px; color: var(--ink-soft); }
 
+.slot-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 0 16px 20px; }
+.slot-foot .tags { margin: 0; }
+.save-slot { display: flex; flex-direction: column; }
+.save-slot-link { flex: 1; height: auto; padding-bottom: 4px; }
+
 .tags { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0 16px; }
-.tag { font-size: 12px; padding: 4px 8px; background: var(--pink-soft); color: var(--ink); border: 2px solid var(--line); line-height: 1; }
+.tags li { display: flex; }
+.tag { display: inline-block; font-size: 12px; padding: 4px 8px; background: var(--pink-soft); color: var(--ink); border: 2px solid var(--line); line-height: 1; text-decoration: none; }
+a.tag:hover, a.tag:focus-visible { background: var(--pink); color: #fff; }
+.tag.is-active { background: var(--ink); color: var(--bg); }
 .tags-lg { margin: 20px 0 0; }
 .tags-lg .tag { font-size: 24px; padding: 6px 12px; }
+
+/* ── 分類與 Hashtag 篩選 ── */
+.cat-badge { display: inline-block; font-size: 12px; padding: 4px 8px; line-height: 1; background: var(--green); color: #fff; border: 2px solid var(--line); text-decoration: none; }
+.cat-badge:hover { background: var(--ink); color: var(--bg); }
+.post-cats { display: flex; gap: 8px; margin-bottom: 8px; }
+.cat-tabs { display: flex; flex-wrap: wrap; gap: 12px; margin: 28px 0 0; }
+.cat-tab {
+  display: inline-flex; align-items: center; gap: 10px; padding: 10px 16px; font-size: 18px; line-height: 1;
+  background: var(--surface); color: var(--ink); border: var(--px) solid var(--line); box-shadow: 4px 4px 0 var(--shadow);
+  text-decoration: none;
+}
+.cat-tab span { font-size: 12px; padding: 3px 6px; background: var(--pink-soft); border: 2px solid var(--line); }
+.cat-tab:hover { color: var(--pink); }
+.cat-tab.is-active { background: var(--ink); color: var(--bg); }
+.cat-tab.is-active span { color: var(--ink); }
+.tag-groups { display: grid; gap: 16px; margin: 24px 0 0; }
+.tag-group { display: grid; grid-template-columns: 7em 1fr; gap: 12px; align-items: start; }
+.tag-group-title { font-size: 16px; color: var(--green); text-decoration: none; padding-top: 2px; }
+.tag-group-title:hover { color: var(--pink); }
+.tag-group .tags, .tags-filter { margin: 0; }
+.tags-filter { margin-top: 20px; }
+.tags-filter .tag { font-size: 14px; padding: 6px 10px; }
+.empty-slot { padding: 32px; text-align: center; border: var(--px) dashed var(--line); color: var(--ink-soft); }
+@media (max-width: 640px) {
+  .tag-group { grid-template-columns: 1fr; gap: 8px; }
+  .cat-tab { font-size: 16px; padding: 8px 12px; }
+}
 
 /* ── 頁面標頭 ── */
 .page-head { padding: 48px 0 24px; }
