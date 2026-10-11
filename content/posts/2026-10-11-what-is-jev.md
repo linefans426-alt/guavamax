@@ -1,10 +1,9 @@
 ---
 title: Jev 是什麼？不寫字、只做判斷的 AI，跟 ChatGPT、Claude 差在哪
 description: 最近很紅的 Jev 不是另一個聊天機器人，而是只負責「快速做判斷」的 System One 模型。這篇用電商客服和知識庫的例子，整理 Jev 跟一般 LLM 的差別、適合用在哪，以及容易誤會的地方。
-date: 2026-10-11 14:30
+date: 2026-10-11 14:20
 tags: [AI 應用, Jev, AI 路由, RAG]
 slug: what-is-jev
-draft: true
 ---
 
 最近開發者圈很常討論 **Jev**。我看了一些實測和應用之後，第一個感覺是：它做的事情很像一個**快速的切換器（switch）**。
