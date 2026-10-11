@@ -486,6 +486,8 @@ def cat_tabs(all_posts: list[Post], active: str | None) -> str:
     items = [f'<a class="cat-tab{" is-active" if active is None else ""}" href="/posts/">全部<span>{len(all_posts)}</span></a>']
     for c in CATEGORIES:
         n = sum(1 for p in all_posts if c["slug"] in p.categories)
+        if n == 0:  # 還沒有文章的分類先不顯示，避免出現空白頁
+            continue
         cls = " is-active" if active == c["slug"] else ""
         items.append(f'<a class="cat-tab{cls}" href="/category/{c["slug"]}/">{esc(c["name"])}<span>{n}</span></a>')
     return f'<nav class="cat-tabs" aria-label="文章分類">{"".join(items)}</nav>'
@@ -568,7 +570,7 @@ def empty_slots() -> str:
 
 
 def list_page(*, all_posts: list[Post], posts: list[Post], path: str, kicker: str, title: str, lead: str,
-              description: str, active_cat: str | None, tag_block: str) -> str:
+              description: str, active_cat: str | None, tag_block: str, noindex: bool = False) -> str:
     cards = "".join(post_card(p, i + 1) for i, p in enumerate(posts)) if posts else ""
     grid = f'<div class="slot-grid">{cards}</div>' if posts else empty_slots()
     body = f"""
@@ -585,7 +587,7 @@ def list_page(*, all_posts: list[Post], posts: list[Post], path: str, kicker: st
   <div class="container">{grid}</div>
 </section>
 """
-    return layout(title=title, description=description, path=path, body=body)
+    return layout(title=title, description=description, path=path, body=body, noindex=noindex)
 
 
 def render_post_list(posts: list[Post]) -> str:
@@ -623,7 +625,7 @@ def render_category_tag(all_posts: list[Post], c: dict, tag: str) -> str:
     return list_page(all_posts=all_posts, posts=tposts, path=tag_url(tag, c["slug"]), kicker=f'{c["en"]} · #TAG',
                      title=f'{c["name"]}・#{tag}', lead=f'「{c["name"]}」分類中，標記 #{tag} 的文章，共 {len(tposts)} 篇。',
                      description=f'{c["name"]}分類中關於 {tag} 的文章。', active_cat=c["slug"],
-                     tag_block=cat_tag_block(c["slug"], cposts, tag))
+                     tag_block=cat_tag_block(c["slug"], cposts, tag), noindex=True)
 
 
 def render_tag(all_posts: list[Post], tag: str) -> str:
@@ -631,7 +633,8 @@ def render_tag(all_posts: list[Post], tag: str) -> str:
     return list_page(all_posts=all_posts, posts=tposts, path=tag_url(tag), kicker="#TAG", title=f"#{tag}",
                      lead=f"所有標記 #{tag} 的文章，共 {len(tposts)} 篇。",
                      description=f"關於 {tag} 的文章列表。", active_cat=None,
-                     tag_block=f'<ul class="tags tags-filter">{tag_list(tags_by_count(all_posts), None, tag)}</ul>')
+                     tag_block=f'<ul class="tags tags-filter">{tag_list(tags_by_count(all_posts), None, tag)}</ul>',
+                     noindex=True)
 
 
 def render_post(p: Post, prev_post: Post | None, next_post: Post | None, draft: bool = False) -> str:
@@ -954,13 +957,14 @@ def build() -> None:
     write("/posts/", render_post_list(posts))
     list_pages = ["/posts/"]
     for c in CATEGORIES:
+        if not any(c["slug"] in p.categories for p in posts):
+            continue  # 空分類不產生頁面
         write(f'/category/{c["slug"]}/', render_category(posts, c))
         list_pages.append(f'/category/{c["slug"]}/')
         for t in {t for p in posts if c["slug"] in p.categories for t in p.tags}:
             write(f'/category/{c["slug"]}/{tag_slug(t)}/', render_category_tag(posts, c, t))
     for t in {t for p in posts for t in p.tags}:
-        write(f"/tags/{tag_slug(t)}/", render_tag(posts, t))
-        list_pages.append(tag_url(t))
+        write(f"/tags/{tag_slug(t)}/", render_tag(posts, t))  # 標籤頁 noindex，不放進 sitemap
     for i, p in enumerate(posts):
         prev_post = posts[i + 1] if i + 1 < len(posts) else None
         next_post = posts[i - 1] if i > 0 else None

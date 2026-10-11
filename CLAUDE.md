@@ -9,6 +9,7 @@
 - `content/posts/*.md`：文章。front matter 有 `draft: true` → 只出現在 `/drafts/`（noindex、無廣告）。
 - 文章分類：`site.json` 的 `categories`（dev 程式相關／apple 蘋果相關／life 生活分享）；front matter 寫 `category: dev` 或 `category: [dev, apple]`。
   每篇的 `tags` 都可點擊：`/tags/<tag>/` 全站篩選、`/category/<cat>/<tag>/` 分類內篩選（tag 轉小寫、空白換成 `-`）。
+  標籤頁與分類內篩選頁都是 noindex（不放廣告、不進 sitemap），避免被 AdSense／Google 視為低價值重複頁；沒有文章的分類不顯示也不產生頁面。
 - 排程發布：`date` 以台北時間解讀，未來日期先隱藏；Actions 每小時（`1 * * * *`）重建，時間到自動上線。
 - `content/pages/`：關於、聯絡、隱私權頁。
 - `content/games/*.md`：遊戲頁（title、title_en、slug、description、script、cover、order、controls、`portrait: true` 為直式）。
