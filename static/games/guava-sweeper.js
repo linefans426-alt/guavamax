@@ -6,11 +6,13 @@
   const HUD_H = 12;
   const BAR_Y = 13, BAR_H = 16;     // 狀態列：剩幾隻蟲、時間、挖／插旗切換
   const TOP = 31;                   // 田地的上緣
-  const CELL = 16;
+  let CELL = 16;                    // 格子大小：特難和地獄是 12
   const LEVELS = [
     { key: "easy", name: "簡單", cols: 8, rows: 10, bugs: 10 },
     { key: "normal", name: "普通", cols: 10, rows: 13, bugs: 20 },
     { key: "hard", name: "困難", cols: 10, rows: 14, bugs: 28 },
+    { key: "expert", name: "特難", cols: 13, rows: 18, bugs: 48, cell: 12 },
+    { key: "hell", name: "地獄", cols: 13, rows: 18, bugs: 60, cell: 12 },
   ];
   const LONG_PRESS = 0.35;
 
@@ -94,6 +96,19 @@
     "...KWWK...",
     "....KK....",
   ], { K: C.ink, W: C.light });
+  // 依格子大小產生葉子和土的圖（16 用手畫的，其他大小用程式產生）
+  const tileCache = {};
+  function tileSet(n) {
+    if (tileCache[n]) return tileCache[n];
+    if (n === 16) return (tileCache[n] = { leaf, hot: leafHot, dirt });
+    const rows = (fn) => Array.from({ length: n }, (_, j) => Array.from({ length: n }, (_, i) => fn(i, j)).join(""));
+    const lf = PX.sprite(rows((i, j) => (j === 0 || i === 0 ? "K" : j === n - 1 || i === n - 1 ? "D" : j === 1 || i === 1 ? "L"
+      : (i * 5 + j * 3) % 11 === 0 ? "D" : "G")), { K: C.ink, L: "#7be08a", G: "#3aa858", D: "#1f6e3a" });
+    const ht = PX.sprite(rows((i, j) => (j === 0 || i === 0 || j === n - 1 || i === n - 1 ? "K" : "L")), { K: C.ink, L: "#a8f0b0" });
+    const dt = PX.sprite(rows((i, j) => (j === n - 1 || i === 0 ? "D" : (i * 7 + j * 5) % 23 === 0 ? "S" : "B")),
+      { D: "#a8783e", B: "#e8c890", S: "#d4ac70" });
+    return (tileCache[n] = { leaf: lf, hot: ht, dirt: dt });
+  }
   const NUM_COLORS = ["", "#1d6fd0", "#1f8a3a", "#d0303a", "#5a2a9a", "#9a3a10", "#178a8a", C.ink, C.gray];
 
   // ── 狀態 ──
@@ -107,7 +122,7 @@
   let boomCell = null, best = 0, newRecord = false;
   let cursor = { x: 0, y: 0 }, useCursor = false;
 
-  const diffBtn = (i) => ({ x: 20, y: 122 + i * 30, w: 120, h: 27 });
+  const diffBtn = (i) => ({ x: 20, y: 116 + i * 28, w: 120, h: 26 });
   const TOOLS = [
     { mode: "dig", label: "挖開", x: 4, col: "#a8783e" },
     { mode: "flag", label: "插旗", x: 56, col: C.red },
@@ -118,7 +133,7 @@
   const inRect = (p, r) => p.x >= r.x && p.x < r.x + r.w && p.y >= r.y && p.y < r.y + r.h;
 
   function start(i) {
-    lv = i; L = LEVELS[i];
+    lv = i; L = LEVELS[i]; CELL = L.cell || 16;
     ox = Math.floor((W - L.cols * CELL) / 2);
     grid = [];
     for (let y = 0; y < L.rows; y++) for (let x = 0; x < L.cols; x++) grid.push({ x, y, bug: false, n: 0, open: false, flag: false, q: false });
@@ -292,27 +307,28 @@
       g.rect(ox - 2, TOP - 2, L.cols * CELL + 4, L.rows * CELL + 4, C.ink);
       for (const c of grid) {
         const x = ox + c.x * CELL, y = TOP + c.y * CELL;
+        const tiles = tileSet(CELL), ty = y + Math.floor((CELL - 13) / 2), ctx = g.ctx;
         if (c.open) {
-          g.draw(dirt, x, y);
+          g.draw(tiles.dirt, x, y);
           if (c.bug) {
             if (c === boomCell) g.rect(x, y, CELL, CELL, C.red);
-            g.draw(bug, x, y);
-          } else if (c.n) g.text(String(c.n), x + 8, y + 1, NUM_COLORS[c.n], { align: "center" });
+            ctx.drawImage(bug, x, y, CELL, CELL);
+          } else if (c.n) g.text(String(c.n), x + CELL / 2, ty, NUM_COLORS[c.n], { align: "center" });
         } else {
           const hot = press && press.c === c && !press.done;
-          g.draw(hot ? leafHot : leaf, x, y);
+          g.draw(hot ? tiles.hot : tiles.leaf, x, y);
           if (c.flag) {
-            g.draw(flag, x, y);
-            if (state === "lose" && !c.bug) { g.rect(x + 3, y + 7, 10, 2, C.red); }
+            ctx.drawImage(flag, x, y, CELL, CELL);
+            if (state === "lose" && !c.bug) { g.rect(x + 2, y + CELL / 2 - 1, CELL - 4, 2, C.red); }
           } else if (c.q) {
-            g.text("?", x + 8, y + 1, C.yellow, { align: "center", shadow: C.ink });
+            g.text("?", x + CELL / 2, ty, C.yellow, { align: "center", shadow: C.ink });
           }
         }
       }
       // 長按進度
       if (press && !press.done && press.t > 0.08 && !press.c.open) {
         const k = Math.min(1, press.t / LONG_PRESS);
-        g.rect(ox + press.c.x * CELL + 1, TOP + press.c.y * CELL + 13, Math.round(14 * k), 2, C.red);
+        g.rect(ox + press.c.x * CELL + 1, TOP + press.c.y * CELL + CELL - 3, Math.round((CELL - 2) * k), 2, C.red);
       }
       if (useCursor && state === "play") {
         const x = ox + cursor.x * CELL, y = TOP + cursor.y * CELL;
@@ -367,24 +383,25 @@
 
   function drawTitle(g) {
     // 背景：一小片田地
-    for (let y = 0; y < 3; y++) for (let x = 0; x < 10; x++) {
-      const k = (x * 3 + y * 5) % 7;
-      g.draw(k < 3 ? leaf : dirt, x * 16, 242 + y * 16);
-      if (k >= 3 && k % 2) g.text(String(1 + (k % 3)), x * 16 + 8, 243 + y * 16, NUM_COLORS[1 + (k % 3)], { align: "center" });
+    for (let x = 0; x < 10; x++) {
+      const k = (x * 3) % 7;
+      g.draw(k < 3 ? leaf : dirt, x * 16, H - 18);
+      if (k >= 3 && k % 2) g.text(String(1 + (k % 3)), x * 16 + 8, H - 17, NUM_COLORS[1 + (k % 3)], { align: "center" });
     }
-    g.draw(flag, 32, 242); g.draw(bug, 112, 258);
-    g.text("芭樂園", W / 2, 22, C.lime, { align: "center", size: 24, shadow: C.ink });
-    g.text("抓蟲", W / 2, 50, C.pink, { align: "center", size: 24, shadow: C.ink });
-    g.text("GUAVA SWEEPER", W / 2, 80, C.white, { align: "center", shadow: C.ink });
-    g.text("數字＝周圍 8 格有幾隻蟲", W / 2, 98, C.white, { align: "center" });
-    g.text("按住或右鍵：插旗 → 問號", W / 2, 110, C.yellow, { align: "center" });
+    g.draw(flag, 32, H - 18); g.draw(bug, 112, H - 18);
+    g.text("芭樂園", W / 2, 14, C.lime, { align: "center", size: 24, shadow: C.ink });
+    g.text("抓蟲", W / 2, 40, C.pink, { align: "center", size: 24, shadow: C.ink });
+    g.text("GUAVA SWEEPER", W / 2, 68, C.white, { align: "center", shadow: C.ink });
+    g.text("數字＝周圍 8 格有幾隻蟲", W / 2, 86, C.white, { align: "center" });
+    g.text("按住或右鍵：插旗 → 問號", W / 2, 99, C.yellow, { align: "center" });
     LEVELS.forEach((d, i) => {
       const r = diffBtn(i);
       g.rect(r.x, r.y, r.w, r.h, C.ink);
-      g.rect(r.x + 1, r.y + 1, r.w - 2, r.h - 2, [C.lime, C.yellow, C.orange][i]);
+      g.rect(r.x + 1, r.y + 1, r.w - 2, r.h - 2, [C.lime, C.yellow, C.orange, C.red, C.plum][i]);
       const b = PX.best(`guava-sweeper-${d.key}`);
-      g.text(`${d.name} ${d.cols}×${d.rows}・${d.bugs} 隻`, r.x + r.w / 2, r.y + 1, C.ink, { align: "center" });
-      g.text(b ? `最快 ${b} 秒` : "還沒破關", r.x + r.w / 2, r.y + 13, C.navy, { align: "center" });
+      const dark = i >= 3;
+      g.text(`${d.name} ${d.cols}×${d.rows}・${d.bugs} 隻`, r.x + r.w / 2, r.y + 1, dark ? C.white : C.ink, { align: "center" });
+      g.text(b ? `最快 ${b} 秒` : "還沒破關", r.x + r.w / 2, r.y + 13, dark ? C.peach : C.navy, { align: "center" });
     });
   }
 
