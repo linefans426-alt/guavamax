@@ -1,7 +1,8 @@
 /* 芭樂園抓蟲 Guava Sweeper */
 (() => {
   const { C } = PX;
-  const W = 160, H = 256;
+  const W = 160, H = 290;
+  const TOOL_Y = 258;               // 最下面的工具列：挖開／插旗
   const HUD_H = 12;
   const BAR_Y = 13, BAR_H = 16;     // 狀態列：剩幾隻蟲、時間、挖／插旗切換
   const TOP = 31;                   // 田地的上緣
@@ -73,6 +74,26 @@
     "................",
     "................",
   ], { K: C.ink, R: C.red, W: C.white });
+  const flagIcon = PX.sprite([
+    ".KK.......",
+    ".KRRRR....",
+    ".KRRRRRR..",
+    ".KRRRRRRR.",
+    ".KRRRR....",
+    ".K........",
+    ".K........",
+    "KKKK......",
+  ], { K: C.ink, R: C.white });
+  const dirtIcon = PX.sprite([
+    "....KK....",
+    "....KK....",
+    "....KK....",
+    "...KWWK...",
+    "..KWWWWK..",
+    "..KWWWWK..",
+    "...KWWK...",
+    "....KK....",
+  ], { K: C.ink, W: C.light });
   const NUM_COLORS = ["", "#1d6fd0", "#1f8a3a", "#d0303a", "#5a2a9a", "#9a3a10", "#178a8a", C.ink, C.gray];
 
   // ── 狀態 ──
@@ -87,7 +108,7 @@
   let cursor = { x: 0, y: 0 }, useCursor = false;
 
   const diffBtn = (i) => ({ x: 20, y: 122 + i * 30, w: 120, h: 27 });
-  const MODE_BTN = { x: W - 50, y: BAR_Y + 1, w: 48, h: BAR_H - 2 };
+  const DIG_BTN = { x: 6, y: TOOL_Y + 3, w: 72, h: 26 }, FLAG_BTN = { x: 82, y: TOOL_Y + 3, w: 72, h: 26 };
   const RESTART_BTN = { x: 64, y: BAR_Y + 1, w: 32, h: BAR_H - 2 };
   const END_AGAIN = { x: 22, y: 150, w: 56, h: 18 }, END_MENU = { x: 82, y: 150, w: 56, h: 18 };
   const inRect = (p, r) => p.x >= r.x && p.x < r.x + r.w && p.y >= r.y && p.y < r.y + r.h;
@@ -212,7 +233,8 @@
       if (!first) time += dt;
 
       // 狀態列按鈕
-      if (tap && inRect(p, MODE_BTN)) { flagMode = !flagMode; PX.beep(flagMode ? 700 : 500, 0.05); return; }
+      if (tap && inRect(p, DIG_BTN)) { if (flagMode) { flagMode = false; PX.beep(500, 0.05); } return; }
+      if (tap && inRect(p, FLAG_BTN)) { flagMode = !flagMode; PX.beep(flagMode ? 700 : 500, 0.05); return; }
       if (tap && inRect(p, RESTART_BTN)) { start(lv); return; }
 
       // 點田地：放開才動作；按住不放就插旗
@@ -291,9 +313,17 @@
       g.text(String(L.bugs - flags), 34, BAR_Y + 1, C.red, { align: "center" });
       g.rect(RESTART_BTN.x, RESTART_BTN.y, RESTART_BTN.w, RESTART_BTN.h, C.ink);
       g.text(state === "lose" ? "QQ" : state === "win" ? "^^" : "↺", W / 2, BAR_Y + 1, C.yellow, { align: "center" });
-      g.rect(MODE_BTN.x, MODE_BTN.y, MODE_BTN.w, MODE_BTN.h, C.ink);
-      g.rect(MODE_BTN.x + 1, MODE_BTN.y + 1, MODE_BTN.w - 2, MODE_BTN.h - 2, flagMode ? C.red : "#a8783e");
-      g.text(flagMode ? "插旗" : "挖開", MODE_BTN.x + MODE_BTN.w / 2, BAR_Y + 1, C.white, { align: "center" });
+      g.text(best ? `最快 ${best}s` : "", W - 3, BAR_Y + 1, C.light, { align: "right" });
+      // 工具列：選「插旗」後，點哪一格就在哪一格插旗（不會挖開）
+      g.rect(0, TOOL_Y, W, H - TOOL_Y, C.ink);
+      const tool = (r, on, label, icon, col) => {
+        g.rect(r.x, r.y, r.w, r.h, on ? C.white : C.gray);
+        g.rect(r.x + 2, r.y + 2, r.w - 4, r.h - 4, on ? col : "#2c3d70");
+        g.draw(icon, r.x + 4, r.y + 5);
+        g.text(label, r.x + 46, r.y + 6, on ? C.white : C.light, { align: "center", shadow: on ? C.ink : undefined });
+      };
+      tool(DIG_BTN, !flagMode, "挖開", dirtIcon, "#a8783e");
+      tool(FLAG_BTN, flagMode, "插旗", flagIcon, C.red);
 
       // 結束畫面
       const panel = (y, h) => { g.rect(10, y, W - 20, h, C.white); g.rect(12, y + 2, W - 24, h - 4, C.navy); };
@@ -321,10 +351,10 @@
     // 背景：一小片田地
     for (let y = 0; y < 3; y++) for (let x = 0; x < 10; x++) {
       const k = (x * 3 + y * 5) % 7;
-      g.draw(k < 3 ? leaf : dirt, x * 16, 212 + y * 16);
-      if (k >= 3 && k % 2) g.text(String(1 + (k % 3)), x * 16 + 8, 213 + y * 16, NUM_COLORS[1 + (k % 3)], { align: "center" });
+      g.draw(k < 3 ? leaf : dirt, x * 16, 242 + y * 16);
+      if (k >= 3 && k % 2) g.text(String(1 + (k % 3)), x * 16 + 8, 243 + y * 16, NUM_COLORS[1 + (k % 3)], { align: "center" });
     }
-    g.draw(flag, 32, 212); g.draw(bug, 112, 228);
+    g.draw(flag, 32, 242); g.draw(bug, 112, 258);
     g.text("芭樂園", W / 2, 22, C.lime, { align: "center", size: 24, shadow: C.ink });
     g.text("抓蟲", W / 2, 50, C.pink, { align: "center", size: 24, shadow: C.ink });
     g.text("GUAVA SWEEPER", W / 2, 80, C.white, { align: "center", shadow: C.ink });
