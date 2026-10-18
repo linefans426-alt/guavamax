@@ -102,13 +102,17 @@
   let lv = 0, L = LEVELS[0];
   let grid = [], ox = 0;
   let first = true, flags = 0, revealed = 0, time = 0;
-  let flagMode = false;
+  let mode = "dig";   // dig 挖開 / flag 插旗 / q 問號
   let press = null, wasDown = false;
   let boomCell = null, best = 0, newRecord = false;
   let cursor = { x: 0, y: 0 }, useCursor = false;
 
   const diffBtn = (i) => ({ x: 20, y: 122 + i * 30, w: 120, h: 27 });
-  const DIG_BTN = { x: 6, y: TOOL_Y + 3, w: 72, h: 26 }, FLAG_BTN = { x: 82, y: TOOL_Y + 3, w: 72, h: 26 };
+  const TOOLS = [
+    { mode: "dig", label: "挖開", x: 4, col: "#a8783e" },
+    { mode: "flag", label: "插旗", x: 56, col: C.red },
+    { mode: "q", label: "問號", x: 108, col: "#c08a00" },
+  ].map((b) => ({ ...b, y: TOOL_Y + 3, w: 48, h: 26 }));
   const RESTART_BTN = { x: 64, y: BAR_Y + 1, w: 32, h: BAR_H - 2 };
   const END_AGAIN = { x: 22, y: 150, w: 56, h: 18 }, END_MENU = { x: 82, y: 150, w: 56, h: 18 };
   const inRect = (p, r) => p.x >= r.x && p.x < r.x + r.w && p.y >= r.y && p.y < r.y + r.h;
@@ -118,7 +122,7 @@
     ox = Math.floor((W - L.cols * CELL) / 2);
     grid = [];
     for (let y = 0; y < L.rows; y++) for (let x = 0; x < L.cols; x++) grid.push({ x, y, bug: false, n: 0, open: false, flag: false, q: false });
-    first = true; flags = 0; revealed = 0; time = 0; flagMode = false; boomCell = null; newRecord = false;
+    first = true; flags = 0; revealed = 0; time = 0; mode = "dig"; boomCell = null; newRecord = false;
     cursor = { x: L.cols >> 1, y: L.rows >> 1 };
     best = PX.best(`guava-sweeper-${L.key}`);
     state = "play"; stateT = 0;
@@ -175,9 +179,21 @@
     try { navigator.vibrate && navigator.vibrate(15); } catch (e) {}
   }
 
+  // 插旗模式／問號模式：點一下放上去，再點一下拿掉
+  function setMark(c, kind) {
+    if (c.open) return;
+    if (kind === "flag") {
+      if (c.flag) { c.flag = false; flags--; } else { c.flag = true; c.q = false; flags++; }
+    } else {
+      if (c.q) c.q = false; else { if (c.flag) { c.flag = false; flags--; } c.q = true; }
+    }
+    PX.beep(c.flag ? 700 : c.q ? 560 : 350, 0.05, "square", 0.04);
+    try { navigator.vibrate && navigator.vibrate(15); } catch (e) {}
+  }
+
   function primary(c) {
     if (c.open) chord(c);
-    else if (flagMode) toggleFlag(c);
+    else if (mode === "flag" || mode === "q") setMark(c, mode);
     else open(c);
   }
 
@@ -233,8 +249,10 @@
       if (!first) time += dt;
 
       // 狀態列按鈕
-      if (tap && inRect(p, DIG_BTN)) { if (flagMode) { flagMode = false; PX.beep(500, 0.05); } return; }
-      if (tap && inRect(p, FLAG_BTN)) { flagMode = !flagMode; PX.beep(flagMode ? 700 : 500, 0.05); return; }
+      if (tap) {
+        const b = TOOLS.find((b) => inRect(p, b));
+        if (b) { if (mode !== b.mode) { mode = b.mode; PX.beep(b.mode === "dig" ? 500 : 700, 0.05); } return; }
+      }
       if (tap && inRect(p, RESTART_BTN)) { start(lv); return; }
 
       // 點田地：放開才動作；按住不放就插旗
@@ -319,11 +337,11 @@
       const tool = (r, on, label, icon, col) => {
         g.rect(r.x, r.y, r.w, r.h, on ? C.white : C.gray);
         g.rect(r.x + 2, r.y + 2, r.w - 4, r.h - 4, on ? col : "#2c3d70");
-        g.draw(icon, r.x + 4, r.y + 5);
-        g.text(label, r.x + 46, r.y + 6, on ? C.white : C.light, { align: "center", shadow: on ? C.ink : undefined });
+        if (icon) g.draw(icon, r.x + 3, r.y + 9);
+        else g.text("?", r.x + 8, r.y + 6, C.yellow, { align: "center", shadow: C.ink });
+        g.text(label, r.x + 31, r.y + 6, on ? C.white : C.light, { align: "center", shadow: on ? C.ink : undefined });
       };
-      tool(DIG_BTN, !flagMode, "挖開", dirtIcon, "#a8783e");
-      tool(FLAG_BTN, flagMode, "插旗", flagIcon, C.red);
+      for (const b of TOOLS) tool(b, mode === b.mode, b.label, { dig: dirtIcon, flag: flagIcon, q: null }[b.mode], b.col);
 
       // 結束畫面
       const panel = (y, h) => { g.rect(10, y, W - 20, h, C.white); g.rect(12, y + 2, W - 24, h - 4, C.navy); };
