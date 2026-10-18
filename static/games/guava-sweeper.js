@@ -96,7 +96,7 @@
     lv = i; L = LEVELS[i];
     ox = Math.floor((W - L.cols * CELL) / 2);
     grid = [];
-    for (let y = 0; y < L.rows; y++) for (let x = 0; x < L.cols; x++) grid.push({ x, y, bug: false, n: 0, open: false, flag: false });
+    for (let y = 0; y < L.rows; y++) for (let x = 0; x < L.cols; x++) grid.push({ x, y, bug: false, n: 0, open: false, flag: false, q: false });
     first = true; flags = 0; revealed = 0; time = 0; flagMode = false; boomCell = null; newRecord = false;
     cursor = { x: L.cols >> 1, y: L.rows >> 1 };
     best = PX.best(`guava-sweeper-${L.key}`);
@@ -130,7 +130,7 @@
     while (stack.length) {
       const k = stack.pop();
       if (k.open || k.flag) continue;
-      k.open = true; revealed++; count++;
+      k.open = true; k.q = false; revealed++; count++;
       if (k.n === 0) for (const n of around(k)) if (!n.open && !n.bug) stack.push(n);
     }
     PX.beep(count > 1 ? 520 : 440, 0.04, "square", 0.04);
@@ -146,8 +146,11 @@
 
   function toggleFlag(c) {
     if (c.open) return;
-    c.flag = !c.flag; flags += c.flag ? 1 : -1;
-    PX.beep(c.flag ? 700 : 350, 0.05, "square", 0.04);
+    // 依序切換：沒標記 → 旗子（確定是蟲）→ 問號（可能是蟲）→ 沒標記
+    if (c.flag) { c.flag = false; c.q = true; flags--; }
+    else if (c.q) c.q = false;
+    else { c.flag = true; flags++; }
+    PX.beep(c.flag ? 700 : c.q ? 560 : 350, 0.05, "square", 0.04);
     try { navigator.vibrate && navigator.vibrate(15); } catch (e) {}
   }
 
@@ -261,6 +264,8 @@
           if (c.flag) {
             g.draw(flag, x, y);
             if (state === "lose" && !c.bug) { g.rect(x + 3, y + 7, 10, 2, C.red); }
+          } else if (c.q) {
+            g.text("?", x + 8, y + 1, C.yellow, { align: "center", shadow: C.ink });
           }
         }
       }
@@ -324,7 +329,7 @@
     g.text("抓蟲", W / 2, 50, C.pink, { align: "center", size: 24, shadow: C.ink });
     g.text("GUAVA SWEEPER", W / 2, 80, C.white, { align: "center", shadow: C.ink });
     g.text("數字＝周圍 8 格有幾隻蟲", W / 2, 98, C.white, { align: "center" });
-    g.text("把沒有蟲的地全部挖開", W / 2, 110, C.light, { align: "center" });
+    g.text("按住或右鍵：插旗 → 問號", W / 2, 110, C.yellow, { align: "center" });
     LEVELS.forEach((d, i) => {
       const r = diffBtn(i);
       g.rect(r.x, r.y, r.w, r.h, C.ink);
