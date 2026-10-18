@@ -248,6 +248,26 @@ SWEEP_SPRITE = [
 ]
 SWEEP_COLORS = {"G": "#1f6e3a", "L": "#3aa858", "B": "#e8c890", "K": "#241a3a", "R": "#ff004d",
                 "1": "#29adff", "2": "#00e436", "W": "#fff1e8"}
+SUDOKU_SPRITE = [
+    "KKKKKKKKKKKKKKKK",
+    "KWWWWKWWWWKWWWWK",
+    "KW5WWKWWW3KWWWWK",
+    "KWWWWKWLWWKW7WWK",
+    "KWW9WKWWWWKWWWWK",
+    "KKKKKKKKKKKKKKKK",
+    "KGGGGKGGGGKGGGGK",
+    "KG1GGKGG4GKGGG8K",
+    "KGGGGKGGGGKGGGGK",
+    "KGG6GKG2GGKG5GGK",
+    "KKKKKKKKKKKKKKKK",
+    "KWWWWKWWWWKWWWWK",
+    "KWW2WKWWWWKW9WWK",
+    "KWWWWKW8WWKWWWWK",
+    "KW4WWKWWW1KWWW6K",
+    "KKKKKKKKKKKKKKKK",
+]
+SUDOKU_COLORS = {"K": "#241a3a", "W": "#fff6e6", "G": "#c8f0a0", "L": "#ffec27",
+                 **{d: "#1d6fd0" for d in "123456789"}}
 COVERS = {"guava": (GUAVA_SPRITE, SPRITE_COLORS), "bug": (BUG_SPRITE, BUG_COLORS),
           "spit": (SPIT_SPRITE, SPIT_COLORS),
           "bricks": (BRICK_SPRITE, BRICK_COLORS),
@@ -255,7 +275,8 @@ COVERS = {"guava": (GUAVA_SPRITE, SPRITE_COLORS), "bug": (BUG_SPRITE, BUG_COLORS
           "dog": (DOG_SPRITE, DOG_COLORS),
           "cannon": (CANNON_SPRITE, CANNON_COLORS),
           "snake": (SNAKE_SPRITE, SNAKE_COLORS),
-          "sweep": (SWEEP_SPRITE, SWEEP_COLORS)}
+          "sweep": (SWEEP_SPRITE, SWEEP_COLORS),
+          "sudoku": (SUDOKU_SPRITE, SUDOKU_COLORS)}
 
 
 def sprite_svg(rows: list[str], colors: dict[str, str], title: str = "") -> str:
