@@ -63,6 +63,35 @@
     } catch (e) {}
   };
 
+  // ── 獎勵廣告（AdSense H5 遊戲廣告 Ad Placement API） ──
+  // 用法：const r = PX.requestReward("名稱")；r.status 會是 loading → ready（有廣告）或 none（沒有廣告）
+  // 玩家按下「看廣告」時呼叫 r.show()，看完 r.result 會變成 "viewed"，中途關掉是 "dismissed"
+  window.adsbygoogle = window.adsbygoogle || [];
+  const adBreak = (o) => window.adsbygoogle.push(o);
+  try { adBreak({ preloadAdBreaks: "on", sound: "on" }); } catch (e) {}
+  PX.requestReward = (name) => {
+    const r = { status: "loading", result: null, _show: null };
+    let savedMute = muted;
+    const timer = setTimeout(() => { if (r.status === "loading") r.status = "none"; }, 1500);
+    try {
+      adBreak({
+        type: "reward", name,
+        beforeReward: (showAdFn) => { clearTimeout(timer); if (r.status === "loading") { r.status = "ready"; r._show = showAdFn; } },
+        beforeAd: () => { r.status = "showing"; savedMute = muted; muted = true; },
+        afterAd: () => { muted = savedMute; },
+        adDismissed: () => { r.result = r.result || "dismissed"; },
+        adViewed: () => { r.result = "viewed"; },
+        adBreakDone: (info) => {
+          clearTimeout(timer);
+          if (r.status === "loading") r.status = "none";
+          else if (r.status === "showing" && !r.result) r.result = info && info.breakStatus === "viewed" ? "viewed" : "dismissed";
+        },
+      });
+    } catch (e) { clearTimeout(timer); r.status = "none"; }
+    r.show = () => { if (r._show && r.status === "ready") { r.status = "showing"; r._show(); } };
+    return r;
+  };
+
   // ── 主程式 ──
   PX.run = (canvas, game) => {
     const W = game.width, H = game.height;

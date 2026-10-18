@@ -120,6 +120,7 @@
   let mode = "dig";   // dig 挖開 / flag 插旗 / q 問號
   let press = null, wasDown = false;
   let boomCell = null, best = 0, newRecord = false;
+  let revived = false, reward = null, reviveMsg = "";
   let cursor = { x: 0, y: 0 }, useCursor = false;
 
   const diffBtn = (i) => ({ x: 20, y: 116 + i * 28, w: 120, h: 26 });
@@ -130,6 +131,7 @@
   ].map((b) => ({ ...b, y: TOOL_Y + 3, w: 48, h: 26 }));
   const RESTART_BTN = { x: 64, y: BAR_Y + 1, w: 32, h: BAR_H - 2 };
   const END_AGAIN = { x: 22, y: 150, w: 56, h: 18 }, END_MENU = { x: 82, y: 150, w: 56, h: 18 };
+  const REVIVE_BTN = { x: 22, y: 140, w: 116, h: 20 }, GIVEUP_BTN = { x: 50, y: 166, w: 60, h: 16 };
   const inRect = (p, r) => p.x >= r.x && p.x < r.x + r.w && p.y >= r.y && p.y < r.y + r.h;
 
   function start(i) {
@@ -137,7 +139,7 @@
     ox = Math.floor((W - L.cols * CELL) / 2);
     grid = [];
     for (let y = 0; y < L.rows; y++) for (let x = 0; x < L.cols; x++) grid.push({ x, y, bug: false, n: 0, open: false, flag: false, q: false });
-    first = true; flags = 0; revealed = 0; time = 0; mode = "dig"; boomCell = null; newRecord = false;
+    first = true; flags = 0; revealed = 0; time = 0; mode = "dig"; boomCell = null; newRecord = false; revived = false; reward = null; reviveMsg = "";
     cursor = { x: L.cols >> 1, y: L.rows >> 1 };
     best = PX.best(`guava-sweeper-${L.key}`);
     state = "play"; stateT = 0;
@@ -212,16 +214,29 @@
     else open(c);
   }
 
+  // 挖到蟲：每局有一次機會「敗部復活」（看廣告；沒有廣告時免費）
   function lose(c) {
-    boomCell = c; state = "lose"; stateT = 0;
-    for (const k of grid) if (k.bug) k.open = true;
+    boomCell = c; c.open = true; stateT = 0;
     PX.beep(160, 0.3, "sawtooth", 0.08, -100);
+    if (!revived) { state = "dead"; reward = PX.requestReward("guava-sweeper-revive"); reviveMsg = ""; }
+    else finalLose();
+  }
+  function finalLose() {
+    state = "lose"; stateT = 0;
+    for (const k of grid) if (k.bug) k.open = true;
+  }
+  function revive() {
+    const c = boomCell;
+    c.open = false; c.flag = true; c.q = false; flags++;
+    boomCell = null; revived = true; reward = null;
+    state = "play"; stateT = 0;
+    PX.beep(523, 0.08); setTimeout(() => PX.beep(784, 0.12), 80);
   }
   function win() {
     state = "win"; stateT = 0;
     for (const k of grid) if (k.bug && !k.flag) { k.flag = true; flags++; }
     const sec = Math.floor(time);
-    if (!best || sec < best) { best = sec; PX.best(`guava-sweeper-${L.key}`, sec); newRecord = true; }
+    if (!revived && (!best || sec < best)) { best = sec; PX.best(`guava-sweeper-${L.key}`, sec); newRecord = true; }
     PX.beep(523, 0.1); setTimeout(() => PX.beep(659, 0.1), 100); setTimeout(() => PX.beep(784, 0.2), 200);
   }
 
@@ -250,6 +265,18 @@
       if (state === "title") {
         if (tap) LEVELS.forEach((_, i) => { if (inRect(p, diffBtn(i))) { start(i); PX.beep(523, 0.08); } });
         if (api.hit(" ", "Enter")) start(0);
+        return;
+      }
+      if (state === "dead") {
+        if (reward && reward.result === "viewed") { revive(); return; }
+        if (reward && reward.result === "dismissed") { reward = null; reviveMsg = "要看完廣告才能復活喔"; }
+        if (stateT > 0.5 && tap) {
+          if (inRect(p, GIVEUP_BTN)) finalLose();
+          else if (reward && inRect(p, REVIVE_BTN)) {
+            if (reward.status === "ready") reward.show();
+            else if (reward.status === "none") revive();
+          }
+        }
         return;
       }
       if (state === "win" || state === "lose") {
@@ -346,7 +373,7 @@
       g.draw(bug, 2, BAR_Y, false, 1);
       g.text(String(L.bugs - flags), 34, BAR_Y + 1, C.red, { align: "center" });
       g.rect(RESTART_BTN.x, RESTART_BTN.y, RESTART_BTN.w, RESTART_BTN.h, C.ink);
-      g.text(state === "lose" ? "QQ" : state === "win" ? "^^" : "↺", W / 2, BAR_Y + 1, C.yellow, { align: "center" });
+      g.text(state === "lose" || state === "dead" ? "QQ" : state === "win" ? "^^" : "↺", W / 2, BAR_Y + 1, C.yellow, { align: "center" });
       g.text(best ? `最快 ${best}s` : "", W - 3, BAR_Y + 1, C.light, { align: "right" });
       // 工具列：選「插旗」後，點哪一格就在哪一格插旗（不會挖開）
       g.rect(0, TOOL_Y, W, H - TOOL_Y, C.ink);
@@ -370,13 +397,26 @@
         if (state === "win") {
           g.text("抓完了！", W / 2, 104, C.yellow, { align: "center", size: 16, shadow: C.ink });
           g.text(`${L.name}・${Math.floor(time)} 秒`, W / 2, 124, C.white, { align: "center" });
-          g.text(newRecord ? "NEW RECORD!" : `BEST ${best} 秒`, W / 2, 136, newRecord ? C.yellow : C.light, { align: "center" });
+          if (revived) g.text("復活過，不列入紀錄", W / 2, 136, C.light, { align: "center" });
+          else g.text(newRecord ? "NEW RECORD!" : `BEST ${best} 秒`, W / 2, 136, newRecord ? C.yellow : C.light, { align: "center" });
         } else {
           g.text("被蟲咬了！", W / 2, 104, C.red, { align: "center", size: 16, shadow: C.ink });
           g.text(`翻開了 ${revealed} 格`, W / 2, 126, C.white, { align: "center" });
         }
         button(END_AGAIN, "再一局", C.yellow);
         button(END_MENU, "選難度", C.light);
+      }
+      if (state === "dead" && stateT > 0.5) {
+        panel(92, 96);
+        g.text("被蟲咬了！", W / 2, 100, C.red, { align: "center", size: 16, shadow: C.ink });
+        g.text(reviveMsg || "復活後這隻蟲會插旗", W / 2, 120, reviveMsg ? C.yellow : C.white, { align: "center" });
+        if (reward) {
+          const st = reward.status;
+          const label = st === "ready" ? "▶ 看廣告復活" : st === "none" ? "免費復活一次" : st === "showing" ? "廣告播放中…" : "準備中…";
+          button(REVIVE_BTN, label, st === "ready" || st === "none" ? C.lime : C.light);
+        }
+        g.rect(GIVEUP_BTN.x, GIVEUP_BTN.y, GIVEUP_BTN.w, GIVEUP_BTN.h, C.gray);
+        g.text("放棄", GIVEUP_BTN.x + GIVEUP_BTN.w / 2, GIVEUP_BTN.y + 1, C.white, { align: "center" });
       }
     },
   };
