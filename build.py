@@ -208,12 +208,54 @@ CANNON_SPRITE = [
 CANNON_COLORS = {"K": "#241a3a", "M": "#8088b0", "Y": "#ffec27", "P": "#ff77a8", "R": "#ff004d",
                  "W": "#fff1e8", "H": "#16121f", "S": "#ffccaa", "L": "#00e436", "N": "#1d2b53",
                  "G": "#4f7a6a", "O": "#d89a54"}
+SNAKE_SPRITE = [
+    "................",
+    "...........GG...",
+    "..........GG....",
+    ".........KKKKK..",
+    "........KLPPPLK.",
+    "........KLPPPLK.",
+    ".........KKKKK..",
+    "................",
+    "....KKK.........",
+    "...KLLLK........",
+    "..KLDLDLKKK.KKK.",
+    "..KLLLLLLLLKLWKK",
+    "..KLDLDLDLDLLKLK",
+    "...KKKKKKKKKKKK.",
+    "................",
+    "OOOOOOOOOOOOOOOO",
+]
+SNAKE_COLORS = {"K": "#241a3a", "L": "#00e436", "D": "#008751", "P": "#ff77a8", "G": "#008751",
+                "W": "#fff1e8", "O": "#3a8a55"}
+SWEEP_SPRITE = [
+    "GGGGGGGGGGGGGGGG",
+    "GLLLLLGBBBBBBBBG",
+    "GL...LGB.1.B.2.G",
+    "GL.KRRGB...B...G",
+    "GL.KRRGBBBBBBBBG",
+    "GL.K.LGB.1.B...G",
+    "GLKKKLGB...B...G",
+    "GGGGGGGGGGGGGGGG",
+    "GBBBBBBBGLLLLLLG",
+    "GB.2.B..GL.RRR.G",
+    "GB...B..GLRWRWRG",
+    "GBBBBBB.GLRRRRRG",
+    "GB.1.B..GL.R.R.G",
+    "GB...B..GL.....G",
+    "GBBBBBBBGLLLLLLG",
+    "GGGGGGGGGGGGGGGG",
+]
+SWEEP_COLORS = {"G": "#1f6e3a", "L": "#3aa858", "B": "#e8c890", "K": "#241a3a", "R": "#ff004d",
+                "1": "#29adff", "2": "#00e436", "W": "#fff1e8"}
 COVERS = {"guava": (GUAVA_SPRITE, SPRITE_COLORS), "bug": (BUG_SPRITE, BUG_COLORS),
           "spit": (SPIT_SPRITE, SPIT_COLORS),
           "bricks": (BRICK_SPRITE, BRICK_COLORS),
           "toss": (TOSS_SPRITE, TOSS_COLORS),
           "dog": (DOG_SPRITE, DOG_COLORS),
-          "cannon": (CANNON_SPRITE, CANNON_COLORS)}
+          "cannon": (CANNON_SPRITE, CANNON_COLORS),
+          "snake": (SNAKE_SPRITE, SNAKE_COLORS),
+          "sweep": (SWEEP_SPRITE, SWEEP_COLORS)}
 
 
 def sprite_svg(rows: list[str], colors: dict[str, str], title: str = "") -> str:

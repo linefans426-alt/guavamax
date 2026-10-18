@@ -1,0 +1,339 @@
+/* 芭樂園抓蟲 Guava Sweeper */
+(() => {
+  const { C } = PX;
+  const W = 160, H = 256;
+  const HUD_H = 12;
+  const BAR_Y = 13, BAR_H = 16;     // 狀態列：剩幾隻蟲、時間、挖／插旗切換
+  const TOP = 31;                   // 田地的上緣
+  const CELL = 16;
+  const LEVELS = [
+    { key: "easy", name: "簡單", cols: 8, rows: 10, bugs: 10 },
+    { key: "normal", name: "普通", cols: 10, rows: 13, bugs: 20 },
+    { key: "hard", name: "困難", cols: 10, rows: 14, bugs: 28 },
+  ];
+  const LONG_PRESS = 0.35;
+
+  // ── 像素圖（16×16） ──
+  const leaf = PX.sprite([
+    "KKKKKKKKKKKKKKKK",
+    "KLLLLLLLLLLLLLLD",
+    "KLGGGGGGGGGGGGLD",
+    "KLGGGGGGGGDGGGLD",
+    "KLGGGDGGGGGGGGLD",
+    "KLGGGGGGGGGGGGLD",
+    "KLGGGGGGGGGGDGLD",
+    "KLGGGGGGDGGGGGLD",
+    "KLGGDGGGGGGGGGLD",
+    "KLGGGGGGGGGGGGLD",
+    "KLGGGGGGGGDGGGLD",
+    "KLGGGGDGGGGGGGLD",
+    "KLGGGGGGGGGGGGLD",
+    "KLGGGGGGGGGGGGLD",
+    "KDDDDDDDDDDDDDDD",
+    "KKKKKKKKKKKKKKKK",
+  ], { K: C.ink, L: "#7be08a", G: "#3aa858", D: "#1f6e3a" });
+  const leafHot = PX.sprite(Array.from({ length: 16 }, (_, j) =>
+    j === 0 || j === 15 ? "KKKKKKKKKKKKKKKK" : "K" + "L".repeat(14) + "K"), { K: C.ink, L: "#a8f0b0" });
+  const dirt = PX.sprite(Array.from({ length: 16 }, (_, j) =>
+    j === 15 ? "DDDDDDDDDDDDDDDD" : "D" + Array.from({ length: 15 }, (_, i) => ((i * 7 + j * 5) % 23 === 0 ? "S" : "B")).join("")),
+  { D: "#a8783e", B: "#e8c890", S: "#d4ac70" });
+  const flag = PX.sprite([
+    "................",
+    "................",
+    "......KK........",
+    "......KRRRR.....",
+    "......KRRRRRR...",
+    "......KRRRRRRR..",
+    "......KRRRRRR...",
+    "......KRRRR.....",
+    "......K.........",
+    "......K.........",
+    "......K.........",
+    "....KKKKK.......",
+    "...KLLLLLK......",
+    "...KLPPPLK......",
+    "....KKKKK.......",
+    "................",
+  ], { K: C.ink, R: C.red, L: C.lime, P: C.pink });
+  const bug = PX.sprite([
+    "................",
+    "....K......K....",
+    ".....K....K.....",
+    "......KKKK......",
+    "....KKRRRRKK....",
+    "...KRRWKRWKRK...",
+    "..KRRRRRRRRRRK..",
+    ".KKRRKRRRRKRRKK.",
+    "..KRRRRKKRRRRK..",
+    ".KKRRKRRRRKRRKK.",
+    "..KRRRRRRRRRRK..",
+    "...KRRRRRRRRK...",
+    "..K.KKKKKKKK.K..",
+    ".K..K......K..K.",
+    "................",
+    "................",
+  ], { K: C.ink, R: C.red, W: C.white });
+  const NUM_COLORS = ["", "#1d6fd0", "#1f8a3a", "#d0303a", "#5a2a9a", "#9a3a10", "#178a8a", C.ink, C.gray];
+
+  // ── 狀態 ──
+  let state = "title";  // title / play / win / lose
+  let t = 0, stateT = 0;
+  let lv = 0, L = LEVELS[0];
+  let grid = [], ox = 0;
+  let first = true, flags = 0, revealed = 0, time = 0;
+  let flagMode = false;
+  let press = null, wasDown = false;
+  let boomCell = null, best = 0, newRecord = false;
+  let cursor = { x: 0, y: 0 }, useCursor = false;
+
+  const diffBtn = (i) => ({ x: 20, y: 122 + i * 30, w: 120, h: 27 });
+  const MODE_BTN = { x: W - 50, y: BAR_Y + 1, w: 48, h: BAR_H - 2 };
+  const RESTART_BTN = { x: 64, y: BAR_Y + 1, w: 32, h: BAR_H - 2 };
+  const END_AGAIN = { x: 22, y: 150, w: 56, h: 18 }, END_MENU = { x: 82, y: 150, w: 56, h: 18 };
+  const inRect = (p, r) => p.x >= r.x && p.x < r.x + r.w && p.y >= r.y && p.y < r.y + r.h;
+
+  function start(i) {
+    lv = i; L = LEVELS[i];
+    ox = Math.floor((W - L.cols * CELL) / 2);
+    grid = [];
+    for (let y = 0; y < L.rows; y++) for (let x = 0; x < L.cols; x++) grid.push({ x, y, bug: false, n: 0, open: false, flag: false });
+    first = true; flags = 0; revealed = 0; time = 0; flagMode = false; boomCell = null; newRecord = false;
+    cursor = { x: L.cols >> 1, y: L.rows >> 1 };
+    best = PX.best(`guava-sweeper-${L.key}`);
+    state = "play"; stateT = 0;
+  }
+  const at = (x, y) => (x < 0 || y < 0 || x >= L.cols || y >= L.rows ? null : grid[y * L.cols + x]);
+  const around = (c) => {
+    const r = [];
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (dx || dy) { const n = at(c.x + dx, c.y + dy); if (n) r.push(n); }
+    return r;
+  };
+
+  // 第一次點開才放蟲，而且點的那格和周圍 8 格一定安全
+  function plant(safe) {
+    const banned = new Set([safe, ...around(safe)]);
+    const pool = grid.filter((c) => !banned.has(c));
+    for (let k = 0; k < L.bugs && pool.length; k++) {
+      const i = (Math.random() * pool.length) | 0;
+      pool[i].bug = true; pool.splice(i, 1);
+    }
+    for (const c of grid) c.n = around(c).filter((n) => n.bug).length;
+  }
+
+  function open(c) {
+    if (c.open || c.flag) return;
+    if (first) { plant(c); first = false; }
+    if (c.bug) { lose(c); return; }
+    // 用堆疊展開空白區域
+    const stack = [c];
+    let count = 0;
+    while (stack.length) {
+      const k = stack.pop();
+      if (k.open || k.flag) continue;
+      k.open = true; revealed++; count++;
+      if (k.n === 0) for (const n of around(k)) if (!n.open && !n.bug) stack.push(n);
+    }
+    PX.beep(count > 1 ? 520 : 440, 0.04, "square", 0.04);
+    if (revealed === L.cols * L.rows - L.bugs) win();
+  }
+
+  // 點已翻開的數字：旗子數量對了，就一次翻開周圍
+  function chord(c) {
+    const ns = around(c);
+    if (ns.filter((n) => n.flag).length !== c.n) { PX.beep(200, 0.05, "triangle", 0.04); return; }
+    for (const n of ns) if (!n.open && !n.flag) { open(n); if (state !== "play") return; }
+  }
+
+  function toggleFlag(c) {
+    if (c.open) return;
+    c.flag = !c.flag; flags += c.flag ? 1 : -1;
+    PX.beep(c.flag ? 700 : 350, 0.05, "square", 0.04);
+    try { navigator.vibrate && navigator.vibrate(15); } catch (e) {}
+  }
+
+  function primary(c) {
+    if (c.open) chord(c);
+    else if (flagMode) toggleFlag(c);
+    else open(c);
+  }
+
+  function lose(c) {
+    boomCell = c; state = "lose"; stateT = 0;
+    for (const k of grid) if (k.bug) k.open = true;
+    PX.beep(160, 0.3, "sawtooth", 0.08, -100);
+  }
+  function win() {
+    state = "win"; stateT = 0;
+    for (const k of grid) if (k.bug && !k.flag) { k.flag = true; flags++; }
+    const sec = Math.floor(time);
+    if (!best || sec < best) { best = sec; PX.best(`guava-sweeper-${L.key}`, sec); newRecord = true; }
+    PX.beep(523, 0.1); setTimeout(() => PX.beep(659, 0.1), 100); setTimeout(() => PX.beep(784, 0.2), 200);
+  }
+
+  const cellAt = (p) => {
+    const x = Math.floor((p.x - ox) / CELL), y = Math.floor((p.y - TOP) / CELL);
+    return at(x, y);
+  };
+
+  // 電腦右鍵插旗
+  let rightClick = false;
+  const canvas = document.getElementById("game");
+  if (canvas) {
+    canvas.addEventListener("pointerdown", (e) => { rightClick = e.button === 2; }, true);
+    canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+  }
+
+  const game = {
+    width: W, height: H,
+    update(dt, api) {
+      t += dt; stateT += dt;
+      const p = api.input.pointer;
+      const tap = api.tapped();
+      const released = wasDown && !p.down;
+      wasDown = p.down;
+
+      if (state === "title") {
+        if (tap) LEVELS.forEach((_, i) => { if (inRect(p, diffBtn(i))) { start(i); PX.beep(523, 0.08); } });
+        if (api.hit(" ", "Enter")) start(0);
+        return;
+      }
+      if (state === "win" || state === "lose") {
+        if (stateT > 0.6) {
+          if (tap && inRect(p, END_AGAIN)) start(lv);
+          else if (tap && inRect(p, END_MENU)) { state = "title"; stateT = 0; }
+          else if (api.hit(" ", "Enter")) start(lv);
+        }
+        return;
+      }
+
+      if (!first) time += dt;
+
+      // 狀態列按鈕
+      if (tap && inRect(p, MODE_BTN)) { flagMode = !flagMode; PX.beep(flagMode ? 700 : 500, 0.05); return; }
+      if (tap && inRect(p, RESTART_BTN)) { start(lv); return; }
+
+      // 點田地：放開才動作；按住不放就插旗
+      if (tap) {
+        const c = cellAt(p);
+        press = c ? { c, t: 0, done: false, x: p.x, y: p.y, right: rightClick } : null;
+        if (press && press.right) { toggleFlag(c); press.done = true; }
+        // 很快的點擊：按下和放開落在同一幀，這裡就直接當成放開
+        else if (press && !p.down) { primary(c); press = null; }
+        useCursor = false;
+      }
+      if (press && p.down && !press.done) {
+        press.t += dt;
+        if (Math.hypot(p.x - press.x, p.y - press.y) > 8) press.done = true; // 手指滑開就取消
+        else if (press.t > LONG_PRESS && !press.c.open) { toggleFlag(press.c); press.done = true; }
+      }
+      if (press && released) {
+        if (!press.done) primary(press.c);
+        press = null;
+      }
+
+      // 鍵盤：方向鍵移動游標，空白鍵翻開，F 插旗
+      const mv = [["ArrowLeft", -1, 0], ["ArrowRight", 1, 0], ["ArrowUp", 0, -1], ["ArrowDown", 0, 1]];
+      for (const [k, dx, dy] of mv) if (api.hit(k)) {
+        cursor.x = Math.max(0, Math.min(L.cols - 1, cursor.x + dx));
+        cursor.y = Math.max(0, Math.min(L.rows - 1, cursor.y + dy));
+        useCursor = true;
+      }
+      if (api.hit(" ", "Enter")) { useCursor = true; primary(at(cursor.x, cursor.y)); }
+      if (api.hit("f")) { useCursor = true; toggleFlag(at(cursor.x, cursor.y)); }
+    },
+    draw(g) {
+      g.clear("#1d2b53");
+      if (state === "title") { drawTitle(g); return; }
+
+      // 田地
+      g.rect(ox - 2, TOP - 2, L.cols * CELL + 4, L.rows * CELL + 4, C.ink);
+      for (const c of grid) {
+        const x = ox + c.x * CELL, y = TOP + c.y * CELL;
+        if (c.open) {
+          g.draw(dirt, x, y);
+          if (c.bug) {
+            if (c === boomCell) g.rect(x, y, CELL, CELL, C.red);
+            g.draw(bug, x, y);
+          } else if (c.n) g.text(String(c.n), x + 8, y + 1, NUM_COLORS[c.n], { align: "center" });
+        } else {
+          const hot = press && press.c === c && !press.done;
+          g.draw(hot ? leafHot : leaf, x, y);
+          if (c.flag) {
+            g.draw(flag, x, y);
+            if (state === "lose" && !c.bug) { g.rect(x + 3, y + 7, 10, 2, C.red); }
+          }
+        }
+      }
+      // 長按進度
+      if (press && !press.done && press.t > 0.08 && !press.c.open) {
+        const k = Math.min(1, press.t / LONG_PRESS);
+        g.rect(ox + press.c.x * CELL + 1, TOP + press.c.y * CELL + 13, Math.round(14 * k), 2, C.red);
+      }
+      if (useCursor && state === "play") {
+        const x = ox + cursor.x * CELL, y = TOP + cursor.y * CELL;
+        const blink = Math.floor(t * 4) % 2 ? C.yellow : C.white;
+        g.rect(x, y, CELL, 1, blink); g.rect(x, y + CELL - 1, CELL, 1, blink);
+        g.rect(x, y, 1, CELL, blink); g.rect(x + CELL - 1, y, 1, CELL, blink);
+      }
+
+      // HUD
+      g.rect(0, 0, W, HUD_H, "rgba(16,19,31,0.95)");
+      g.text(`抓蟲・${L.name}`, 2, -1, C.yellow);
+      g.text(`${Math.min(999, Math.floor(time))} 秒`, W - 2, -1, C.white, { align: "right" });
+      // 狀態列
+      g.rect(2, BAR_Y + 1, 52, BAR_H - 2, C.ink);
+      g.draw(bug, 2, BAR_Y, false, 1);
+      g.text(String(L.bugs - flags), 34, BAR_Y + 1, C.red, { align: "center" });
+      g.rect(RESTART_BTN.x, RESTART_BTN.y, RESTART_BTN.w, RESTART_BTN.h, C.ink);
+      g.text(state === "lose" ? "QQ" : state === "win" ? "^^" : "↺", W / 2, BAR_Y + 1, C.yellow, { align: "center" });
+      g.rect(MODE_BTN.x, MODE_BTN.y, MODE_BTN.w, MODE_BTN.h, C.ink);
+      g.rect(MODE_BTN.x + 1, MODE_BTN.y + 1, MODE_BTN.w - 2, MODE_BTN.h - 2, flagMode ? C.red : "#a8783e");
+      g.text(flagMode ? "插旗" : "挖開", MODE_BTN.x + MODE_BTN.w / 2, BAR_Y + 1, C.white, { align: "center" });
+
+      // 結束畫面
+      const panel = (y, h) => { g.rect(10, y, W - 20, h, C.white); g.rect(12, y + 2, W - 24, h - 4, C.navy); };
+      const button = (r, label, col) => {
+        g.rect(r.x, r.y, r.w, r.h, C.ink); g.rect(r.x + 1, r.y + 1, r.w - 2, r.h - 2, col);
+        g.text(label, r.x + r.w / 2, r.y + 2, C.ink, { align: "center" });
+      };
+      if ((state === "win" || state === "lose") && stateT > 0.6) {
+        panel(96, 80);
+        if (state === "win") {
+          g.text("抓完了！", W / 2, 104, C.yellow, { align: "center", size: 16, shadow: C.ink });
+          g.text(`${L.name}・${Math.floor(time)} 秒`, W / 2, 124, C.white, { align: "center" });
+          g.text(newRecord ? "NEW RECORD!" : `BEST ${best} 秒`, W / 2, 136, newRecord ? C.yellow : C.light, { align: "center" });
+        } else {
+          g.text("被蟲咬了！", W / 2, 104, C.red, { align: "center", size: 16, shadow: C.ink });
+          g.text(`翻開了 ${revealed} 格`, W / 2, 126, C.white, { align: "center" });
+        }
+        button(END_AGAIN, "再一局", C.yellow);
+        button(END_MENU, "選難度", C.light);
+      }
+    },
+  };
+
+  function drawTitle(g) {
+    // 背景：一小片田地
+    for (let y = 0; y < 3; y++) for (let x = 0; x < 10; x++) {
+      const k = (x * 3 + y * 5) % 7;
+      g.draw(k < 3 ? leaf : dirt, x * 16, 212 + y * 16);
+      if (k >= 3 && k % 2) g.text(String(1 + (k % 3)), x * 16 + 8, 213 + y * 16, NUM_COLORS[1 + (k % 3)], { align: "center" });
+    }
+    g.draw(flag, 32, 212); g.draw(bug, 112, 228);
+    g.text("芭樂園", W / 2, 22, C.lime, { align: "center", size: 24, shadow: C.ink });
+    g.text("抓蟲", W / 2, 50, C.pink, { align: "center", size: 24, shadow: C.ink });
+    g.text("GUAVA SWEEPER", W / 2, 80, C.white, { align: "center", shadow: C.ink });
+    g.text("數字＝周圍 8 格有幾隻蟲", W / 2, 98, C.white, { align: "center" });
+    g.text("把沒有蟲的地全部挖開", W / 2, 110, C.light, { align: "center" });
+    LEVELS.forEach((d, i) => {
+      const r = diffBtn(i);
+      g.rect(r.x, r.y, r.w, r.h, C.ink);
+      g.rect(r.x + 1, r.y + 1, r.w - 2, r.h - 2, [C.lime, C.yellow, C.orange][i]);
+      const b = PX.best(`guava-sweeper-${d.key}`);
+      g.text(`${d.name} ${d.cols}×${d.rows}・${d.bugs} 隻`, r.x + r.w / 2, r.y + 1, C.ink, { align: "center" });
+      g.text(b ? `最快 ${b} 秒` : "還沒破關", r.x + r.w / 2, r.y + 13, C.navy, { align: "center" });
+    });
+  }
+
+  if (canvas) PX.run(canvas, game);
+})();
