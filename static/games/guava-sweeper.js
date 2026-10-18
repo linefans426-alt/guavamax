@@ -236,7 +236,7 @@
     state = "win"; stateT = 0;
     for (const k of grid) if (k.bug && !k.flag) { k.flag = true; flags++; }
     const sec = Math.floor(time);
-    if (!revived && (!best || sec < best)) { best = sec; PX.best(`guava-sweeper-${L.key}`, sec); newRecord = true; }
+    if (!best || sec < best) { best = sec; PX.best(`guava-sweeper-${L.key}`, sec); newRecord = true; }
     PX.beep(523, 0.1); setTimeout(() => PX.beep(659, 0.1), 100); setTimeout(() => PX.beep(784, 0.2), 200);
   }
 
@@ -397,8 +397,7 @@
         if (state === "win") {
           g.text("抓完了！", W / 2, 104, C.yellow, { align: "center", size: 16, shadow: C.ink });
           g.text(`${L.name}・${Math.floor(time)} 秒`, W / 2, 124, C.white, { align: "center" });
-          if (revived) g.text("復活過，不列入紀錄", W / 2, 136, C.light, { align: "center" });
-          else g.text(newRecord ? "NEW RECORD!" : `BEST ${best} 秒`, W / 2, 136, newRecord ? C.yellow : C.light, { align: "center" });
+          g.text(newRecord ? "NEW RECORD!" : `BEST ${best} 秒`, W / 2, 136, newRecord ? C.yellow : C.light, { align: "center" });
         } else {
           g.text("被蟲咬了！", W / 2, 104, C.red, { align: "center", size: 16, shadow: C.ink });
           g.text(`翻開了 ${revealed} 格`, W / 2, 126, C.white, { align: "center" });
