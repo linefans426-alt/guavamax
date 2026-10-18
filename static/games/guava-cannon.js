@@ -24,7 +24,7 @@
   // player：腳底位置；enemies：x 和大概的高度（載入時會往下找地面）；boulders：巨石
   const LEVELS = [
     {
-      name: "T 字塔", ammo: 4, par: 1,
+      name: "T 字塔", par: 1,
       hint: "炸巨石左邊\n把它推下去！",
       player: { x: 12, y: 200 },
       shapes: [R(0, 200, 24, 56, ROCK), R(24, 238, 136, 18), R(94, 112, 20, 126), R(64, 100, 88, 12)],
@@ -32,7 +32,7 @@
       boulders: [{ x: 108, y: 88, r: 8 }],
     },
     {
-      name: "兩層樓", ammo: 4, par: 2,
+      name: "兩層樓", par: 2,
       hint: "頭上有「!」的蟲兵\n會丟蟲蛋過來",
       player: { x: 12, y: 196 },
       shapes: [R(0, 196, 24, 60, ROCK), R(24, 226, 136, 30), R(66, 170, 36, 8), R(79, 178, 10, 48), R(116, 118, 44, 108)],
@@ -40,7 +40,7 @@
       boulders: [{ x: 126, y: 108, r: 7 }],
     },
     {
-      name: "滾石坡", ammo: 3, par: 1,
+      name: "滾石坡", par: 1,
       hint: "炸掉擋住巨石的\n小木塊",
       player: { x: 11, y: 150 },
       shapes: [R(0, 150, 22, 106, ROCK), R(22, 238, 138, 18),
@@ -51,7 +51,7 @@
       boulders: [{ x: 140, y: 52, r: 10 }],
     },
     {
-      name: "石頭碉堡", ammo: 5, par: 3,
+      name: "石頭碉堡", par: 3,
       hint: "石頭炸不壞\n從旁邊的木牆打進去",
       player: { x: 12, y: 200 },
       shapes: [R(0, 200, 24, 56, ROCK), R(24, 236, 136, 20), R(92, 120, 68, 6, ROCK),
@@ -60,7 +60,7 @@
       boulders: [],
     },
     {
-      name: "斷橋", ammo: 3, par: 2,
+      name: "斷橋", par: 2,
       hint: "把橋炸斷\n讓蟲兵掉下去",
       player: { x: 12, y: 170 },
       shapes: [R(0, 170, 24, 86, ROCK), R(24, 150, 14, 106), R(132, 150, 28, 106), R(38, 150, 94, 6)],
@@ -68,7 +68,7 @@
       boulders: [{ x: 146, y: 140, r: 8 }],
     },
     {
-      name: "雙石谷", ammo: 4, par: 3,
+      name: "雙石谷", par: 3,
       hint: "兩顆巨石\n都可以利用",
       player: { x: 10, y: 64 },
       shapes: [R(0, 64, 20, 192, ROCK), R(20, 222, 140, 34),
@@ -78,7 +78,7 @@
       boulders: [{ x: 52, y: 110, r: 9 }, { x: 136, y: 94, r: 9 }],
     },
     {
-      name: "反擊", ammo: 6, par: 4,
+      name: "反擊", par: 4,
       hint: "砲彈可以打掉\n飛過來的蟲蛋",
       player: { x: 12, y: 210 },
       shapes: [R(0, 210, 24, 46, ROCK), R(24, 232, 136, 24), O(78, 236, 18), R(120, 142, 30, 90), R(112, 136, 46, 6)],
@@ -86,7 +86,7 @@
       boulders: [{ x: 122, y: 126, r: 8 }],
     },
     {
-      name: "蟲王塔", ammo: 7, par: 5,
+      name: "蟲王塔", par: 5,
       hint: "最後一關！\n先想好炸的順序",
       player: { x: 12, y: 204 },
       shapes: [R(0, 204, 24, 52, ROCK), R(24, 236, 136, 20), R(98, 64, 56, 172),
@@ -477,13 +477,13 @@
 
   // ── 遊戲狀態 ──
   const SAVE = "guava-cannon";
-  let state = "title";          // title / play / clear / fail / over
+  let state = "title";          // title / play / clear / over
   let stateT = 0, t = 0;
   let world = null, levelIdx = 0;
-  let ammo = 0, shots = 0, hearts = 3, invuln = 0, reload = 0;
+  let shots = 0, hearts = 3, invuln = 0, reload = 0;
   let aim = { angle: 45, power: 0.6 };
   let aiming = false, wasDown = false, aimTouched = false;
-  let shake = 0, calmT = 0, clearStars = 0, failMsg = "";
+  let shake = 0, calmT = 0, clearStars = 0;
   let keyHold = 0, keyAim = 0;
   let particles = [], pops = [], booms = [];
   let unlocked = Math.max(1, PX.best(SAVE + "-unlocked"));
@@ -493,7 +493,7 @@
   function startLevel(i) {
     levelIdx = i;
     world = buildWorld(i);
-    ammo = LEVELS[i].ammo; shots = 0; hearts = 3; invuln = 0; reload = 0;
+    shots = 0; hearts = 3; invuln = 0; reload = 0;
     aim = { angle: world.player.x < W / 2 ? 50 : 130, power: 0.6 };
     particles = []; pops = []; booms = []; calmT = 0; shake = 0;
     paintBackground(i + 1);
@@ -606,7 +606,7 @@
         return;
       }
 
-      if (state === "clear" || state === "fail" || state === "over") {
+      if (state === "clear" || state === "over") {
         if (world) { step(world, dt); handleEvents(); }
         updateFx(dt);
         if (stateT < 0.6) return;
@@ -625,7 +625,8 @@
       if (tap && inRect(p, BTN_MENU)) { state = "title"; stateT = 0; return; }
 
       reload -= dt; invuln -= dt;
-      const canFire = ammo > 0 && reload <= 0 && !world.bombs.length;
+      // 砲彈無限：只要還有愛心就能一直打
+      const canFire = reload <= 0 && !world.bombs.length;
 
       // 觸控／滑鼠：按住往想打的方向拖，放開發射
       if (tap && p.y > HUD_H) aiming = true;
@@ -679,9 +680,6 @@
           state = "clear"; stateT = 0;
           PX.beep(523, 0.1); setTimeout(() => PX.beep(659, 0.1), 100); setTimeout(() => PX.beep(784, 0.18), 200);
         }
-      } else if (ammo <= 0 && calm(world)) {
-        calmT += dt;
-        if (calmT > 1.2) { state = "fail"; stateT = 0; failMsg = "砲彈用完了"; PX.beep(196, 0.3, "triangle", 0.07, -60); }
       } else calmT = 0;
     },
     draw(g) {
@@ -720,7 +718,7 @@
       }
       // 瞄準軌跡
       // 準備好可以發射時一直顯示虛線；正在調整時變亮，並顯示力道條和角度
-      if (state === "play" && ammo > 0 && !world.bombs.length) {
+      if (state === "play" && !world.bombs.length) {
         const active = aiming || keyAim > 0;
         const pts = trajectory();
         pts.forEach(([x, y], i) => g.rect(x, y, i % 3 === 0 ? 2 : 1, i % 3 === 0 ? 2 : 1, active ? C.white : "rgba(255,241,232,0.55)"));
@@ -753,10 +751,9 @@
       g.rect(0, 0, W, HUD_H, "rgba(16,19,31,0.9)");
       g.text(`${levelIdx + 1}. ${LEVELS[levelIdx].name}`, 2, -1, C.yellow);
       for (let i = 0; i < 3; i++) g.draw(i < hearts ? heart : heartEmpty, 76 + i * 8, 3);
-      for (let i = 0; i < LEVELS[levelIdx].ammo; i++) {
-        if (i < ammo) g.draw(guavaSpr, 102 + i * 6 - (LEVELS[levelIdx].ammo > 5 ? i : 0), 3);
-        else g.rect(104 + i * 6 - (LEVELS[levelIdx].ammo > 5 ? i : 0), 5, 2, 2, C.gray);
-      }
+      // 已經用了幾發（超過三星門檻會變紅）
+      g.draw(guavaSpr, 104, 3);
+      g.text(`${shots}/${LEVELS[levelIdx].par}`, 112, -1, shots > LEVELS[levelIdx].par ? C.red : C.white);
       g.text("↺", BTN_RESTART.x + 6, -1, C.white, { align: "center" });
       g.text("≡", BTN_MENU.x + 6, -1, C.white, { align: "center" });
 
@@ -786,10 +783,10 @@
           if (!hasNext) g.text("全部破關！", W / 2, 146, C.pink, { align: "center" });
         }
       }
-      if (state === "fail" || state === "over") {
+      if (state === "over") {
         panel(92, 116);
-        g.text(state === "over" ? "被打倒了" : "失敗", W / 2, 102, C.red, { align: "center", size: 16, shadow: C.ink });
-        g.text(state === "over" ? "小心飛過來的蟲蛋" : failMsg, W / 2, 126, C.white, { align: "center" });
+        g.text("被打倒了", W / 2, 102, C.red, { align: "center", size: 16, shadow: C.ink });
+        g.text("小心飛過來的蟲蛋", W / 2, 126, C.white, { align: "center" });
         g.text(`還剩 ${world.enemies.filter((e) => !e.dead).length} 隻蟲兵`, W / 2, 140, C.light, { align: "center" });
         if (stateT > 0.6) {
           button(panelBtns.again, "再試一次", C.yellow);
@@ -801,7 +798,7 @@
 
   function shoot() {
     fire(world, aim.angle, aim.power);
-    ammo--; shots++; reload = 0.35;
+    shots++; reload = 0.35;
     if (shots === 1) tutorial = false;
     PX.beep(220, 0.12, "square", 0.07, 260);
     const m = muzzle(world);
