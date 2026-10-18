@@ -484,6 +484,7 @@
   let aim = { angle: 45, power: 0.6 };
   let aiming = false, wasDown = false, aimTouched = false;
   let shake = 0, calmT = 0, clearStars = 0, failMsg = "";
+  let keyHold = 0, keyAim = 0;
   let particles = [], pops = [], booms = [];
   let unlocked = Math.max(1, PX.best(SAVE + "-unlocked"));
   const stars = LEVELS.map((_, i) => PX.best(`${SAVE}-stars-${i}`));
@@ -643,11 +644,22 @@
         if (aimTouched && canFire) shoot();
       }
       // 鍵盤
-      const side = world.player.x < W / 2 ? 1 : -1;
-      if (api.key("ArrowUp")) aim.angle += 60 * dt * side;
-      if (api.key("ArrowDown")) aim.angle -= 60 * dt * side;
-      if (api.key("ArrowRight")) aim.power = Math.min(1, aim.power + 0.5 * dt);
-      if (api.key("ArrowLeft")) aim.power = Math.max(0, aim.power - 0.5 * dt);
+      // 鍵盤：← → 轉砲管（點一下 1 度，按住先慢後快）、↑ ↓ 調力道
+      const turn = (api.key("ArrowLeft") ? 1 : 0) - (api.key("ArrowRight") ? 1 : 0);
+      const pw = (api.key("ArrowUp") ? 1 : 0) - (api.key("ArrowDown") ? 1 : 0);
+      if (turn || pw) { keyHold += dt; keyAim = 2; } else keyHold = 0;
+      if (api.hit("ArrowLeft")) aim.angle += 1;
+      if (api.hit("ArrowRight")) aim.angle -= 1;
+      if (api.hit("ArrowUp")) aim.power = Math.min(1, aim.power + 0.01);
+      if (api.hit("ArrowDown")) aim.power = Math.max(0, aim.power - 0.01);
+      if (keyHold > 0.25) {
+        const fast = keyHold > 1 ? 1 : 0.35;
+        aim.angle += turn * 50 * fast * dt;
+        aim.power = Math.max(0, Math.min(1, aim.power + pw * 0.45 * fast * dt));
+      }
+      if (aim.angle > 180) aim.angle -= 360;
+      if (aim.angle < -180) aim.angle += 360;
+      keyAim -= dt;
       if (api.hit(" ", "Enter") && canFire) shoot();
       if (api.hit("r")) { startLevel(levelIdx); return; }
 
@@ -707,10 +719,15 @@
         drawTube(g, aim.angle);
       }
       // 瞄準軌跡
-      if (state === "play" && ammo > 0 && !world.bombs.length && (aiming || tutorial)) {
+      // 準備好可以發射時一直顯示虛線；正在調整時變亮，並顯示力道條和角度
+      if (state === "play" && ammo > 0 && !world.bombs.length) {
+        const active = aiming || keyAim > 0;
         const pts = trajectory();
-        pts.forEach(([x, y], i) => g.rect(x, y, i % 3 === 0 ? 2 : 1, i % 3 === 0 ? 2 : 1, aiming ? C.white : "rgba(255,241,232,0.5)"));
-        if (aiming) {
+        pts.forEach(([x, y], i) => g.rect(x, y, i % 3 === 0 ? 2 : 1, i % 3 === 0 ? 2 : 1, active ? C.white : "rgba(255,241,232,0.55)"));
+        if (active) {
+          const deg = Math.round(pl.x > W / 2 ? 180 - aim.angle : aim.angle);
+          g.text(`${deg}°  ${Math.round(aim.power * 100)}%`, pl.x + (pl.x > W / 2 ? -14 : 14), pl.y - 30, C.white,
+            { align: pl.x > W / 2 ? "right" : "left", shadow: C.ink });
           const m = muzzle(world);
           g.rect(m.x - 12 * (pl.x > W / 2 ? -1 : 1) - 1, pl.y - 26, 3, 22, C.ink);
           const ph = Math.round(20 * aim.power);
