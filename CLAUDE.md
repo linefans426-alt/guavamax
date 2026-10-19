@@ -16,7 +16,7 @@
   每款遊戲都要有「## 玩法說明」和「## 開發筆記」。
 - 遊戲封面像素圖寫在 `build.py` 的 `COVERS`。
 - `static/games/px.js`：小型 canvas 遊戲引擎 `PX`（sprite、run、beep、best、PICO-8 色盤 `PX.C`、60Hz 固定步長）。
-  遊戲：guava-catch、bug-hunt、brick-breaker、seed-rush、toss-duel、fluffy-dash、guava-cannon、guava-snake（貪食蛇）、guava-sweeper（踩地雷）、guava-sudoku（數獨，`window.GuavaSudokuGen` 可在 node 驗證出題唯一解）。
+  遊戲：guava-catch、bug-hunt、brick-breaker、seed-rush、toss-duel、fluffy-dash、guava-cannon、guava-snake（貪食蛇）、guava-sweeper（踩地雷）、guava-sudoku（數獨，`window.GuavaSudokuGen` 可在 node 驗證出題唯一解）、guava-match（三消，`window.GuavaMatchSim` 可用 node 跑機器人測每關勝率）。
   guava-cannon 的物理有 `window.GuavaCannonSim`，改關卡後可用 node 暴力搜尋射擊角度／力道驗證每關破得了。
 - `src/`：style.css、main.js（深淺色、私訊表單、giscus 延遲載入）。
 
